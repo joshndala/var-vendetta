@@ -5,13 +5,13 @@ export async function POST(request: Request) {
   await new Promise((resolve) => setTimeout(resolve, 1500))
 
   // TODO: In a real application, this would:
-  // 1. Process the audio files (transcription)
+  // 1. Process the text transcriptions
   // 2. Generate embeddings
   // 3. Send to an AI model for analysis
 
   // For now, return mock data
   return NextResponse.json({
-    response: `Based on the audio recordings you've shared, I've analyzed the player mistakes in question.
+    response: `Based on the text descriptions you've shared, I've analyzed the player mistakes in question.
 
 The first incident at 02:14 appears to be a poor first touch from the striker that allowed the defender to intercept what should have been a clear goal-scoring opportunity. The player needed to keep the ball closer to their feet while maintaining forward momentum.
 

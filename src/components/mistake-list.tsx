@@ -2,15 +2,14 @@
 
 import { useState } from "react"
 import type { Mistake } from "../../types"
-import { Play, Pause } from "lucide-react"
+import { MessageSquare, ChevronDown, ChevronUp } from "lucide-react"
 
 interface MistakeListProps {
   mistakes: Mistake[]
 }
 
 export default function MistakeList({ mistakes }: MistakeListProps) {
-  const [playingId, setPlayingId] = useState<string | null>(null)
-  const audioRef = useState<HTMLAudioElement | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp)
@@ -24,29 +23,11 @@ export default function MistakeList({ mistakes }: MistakeListProps) {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
   }
 
-  const playAudio = (mistake: Mistake) => {
-    if (playingId === mistake.id) {
-      // Stop playing
-      if (audioRef[0]) {
-        audioRef[0].pause()
-        audioRef[0] = null
-      }
-      setPlayingId(null)
+  const toggleExpand = (mistakeId: string) => {
+    if (expandedId === mistakeId) {
+      setExpandedId(null)
     } else {
-      // Stop any currently playing audio
-      if (audioRef[0]) {
-        audioRef[0].pause()
-      }
-
-      // Play the new audio
-      const audio = new Audio(mistake.audioUrl)
-      audio.onended = () => {
-        setPlayingId(null)
-        audioRef[0] = null
-      }
-      audio.play()
-      audioRef[0] = audio
-      setPlayingId(mistake.id)
+      setExpandedId(mistakeId)
     }
   }
 
@@ -67,20 +48,36 @@ export default function MistakeList({ mistakes }: MistakeListProps) {
         {mistakes.map((mistake) => (
           <div
             key={mistake.id}
-            className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+            className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow overflow-hidden"
           >
-            <div>
-              <div className="font-medium">Mistake at {formatTimestamp(mistake.timestamp)}</div>
-              <div className="text-sm text-gray-500">Session time: {formatElapsedTime(mistake.elapsedTime)}</div>
+            <div 
+              className="flex items-center justify-between p-4 cursor-pointer"
+              onClick={() => toggleExpand(mistake.id)}
+            >
+              <div>
+                <div className="font-medium">Mistake at {formatTimestamp(mistake.timestamp)}</div>
+                <div className="text-sm text-gray-500">Session time: {formatElapsedTime(mistake.elapsedTime)}</div>
+              </div>
+
+              <div className="flex items-center">
+                {mistake.transcribedText && (
+                  <MessageSquare size={18} className="text-gray-400 mr-2" />
+                )}
+                {expandedId === mistake.id ? (
+                  <ChevronUp size={18} className="text-gray-500" />
+                ) : (
+                  <ChevronDown size={18} className="text-gray-500" />
+                )}
+              </div>
             </div>
 
-            <button
-              onClick={() => playAudio(mistake)}
-              className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-              aria-label={playingId === mistake.id ? "Pause audio" : "Play audio"}
-            >
-              {playingId === mistake.id ? <Pause size={18} /> : <Play size={18} />}
-            </button>
+            {expandedId === mistake.id && mistake.transcribedText && (
+              <div className="px-4 pb-4 pt-0 border-t border-gray-100">
+                <div className="p-3 bg-gray-50 rounded text-sm mt-2">
+                  <p className="text-gray-700">{mistake.transcribedText}</p>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

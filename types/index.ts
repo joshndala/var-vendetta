@@ -4,6 +4,7 @@ export interface Mistake {
   elapsedTime: number
   audioBlob: Blob
   audioUrl: string
+  transcribedText?: string
 }
 
 export interface AIResponse {
