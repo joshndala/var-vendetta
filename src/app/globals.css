@@ -1,0 +1,324 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Animation keyframes */
+@keyframes scroll-stripes-right {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 0;
+  }
+}
+
+@keyframes scroll-stripes-left {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: -40px 0;
+  }
+}
+
+@keyframes flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+@layer base {
+  :root {
+    /* More modern, tech-inspired dark color scheme */
+    --background: 220 13% 8%; /* Dark charcoal */
+    --foreground: 0 0% 96%; /* Off-white */
+
+    --card: 220 12% 14%; /* Darker gray for cards */
+    --card-foreground: 0 0% 96%; /* Off-white */
+
+    --popover: 220 12% 14%; /* Same as card */
+    --popover-foreground: 0 0% 96%; /* Off-white */
+
+    /* VAR red for primary */
+    --primary: 0 90% 50%; /* Vivid red */
+    --primary-foreground: 0 0% 100%; /* Pure white */
+
+    /* Referee whistle yellow for secondary */
+    --secondary: 45 100% 50%;
+    --secondary-foreground: 0 0% 10%; /* Near black */
+
+    --muted: 220 13% 18%; /* Slightly lighter than background */
+    --muted-foreground: 0 0% 65%; /* Subtle gray */
+
+    /* Terminal green for accent */
+    --accent: 135 80% 40%; 
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 100% 45%; /* Bold red */
+    --destructive-foreground: 0 0% 100%; /* Pure white */
+
+    --border: 220 13% 20%; /* Border darker than background */
+    --input: 220 13% 20%; /* Same as border */
+    --ring: 0 90% 50%; /* Same as primary */
+
+    --radius: 0.25rem; /* Sharper corners */
+    
+    /* Chart colors - more tech-inspired neon palette */
+    --chart-1: 0 90% 50%; /* Red */
+    --chart-2: 120 90% 50%; /* Green */
+    --chart-3: 240 90% 50%; /* Blue */
+    --chart-4: 60 90% 50%; /* Yellow */
+    --chart-5: 300 90% 50%; /* Purple */
+    
+    /* Sidebar with even darker background */
+    --sidebar: 220 15% 5%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 0 90% 50%;
+    --sidebar-primary-foreground: 0 0% 96%;
+    --sidebar-accent: 135 80% 40%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 220 13% 15%;
+    --sidebar-ring: 0 90% 50%;
+  }
+
+  .dark {
+    /* Already in dark mode, but can adjust slightly if needed */
+    --background: 220 13% 5%; /* Even darker */
+    --foreground: 0 0% 98%; /* Brighter white */
+
+    /* The rest of the colors can remain similar */
+    --card: 220 12% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 220 12% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 95% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 45 100% 50%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 220 13% 16%;
+    --muted-foreground: 0 0% 70%;
+
+    --accent: 135 85% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 0 95% 55%;
+    
+    /* Chart and sidebar colors can stay the same */
+    --chart-1: 0 95% 55%;
+    --chart-2: 120 95% 55%;
+    --chart-3: 240 95% 55%;
+    --chart-4: 60 95% 55%;
+    --chart-5: 300 95% 55%;
+    --sidebar: 220 15% 3%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 95% 55%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 135 85% 45%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 220 13% 13%;
+    --sidebar-ring: 0 95% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Terminal/code-like text */
+  .terminal-text {
+    @apply font-mono text-accent tracking-tight;
+  }
+  
+  /* Digital clock style */
+  .digital-clock {
+    @apply font-mono text-secondary bg-background px-2 py-1 rounded border border-secondary/50;
+  }
+  
+  /* Referee stripe patterns */
+  .referee-stripes-h {
+    background: repeating-linear-gradient(90deg, #000, #000 10px, #fff 10px, #fff 20px);
+  }
+  
+  /* Animated referee stripes */
+  .referee-stripes-scroll-right {
+    background: repeating-linear-gradient(90deg, #000, #000 10px, #fff 10px, #fff 20px);
+    animation: scroll-stripes-right 2s linear infinite;
+    background-size: 40px 100%;
+  }
+  
+  .referee-stripes-scroll-left {
+    background: repeating-linear-gradient(90deg, #000, #000 10px, #fff 10px, #fff 20px);
+    animation: scroll-stripes-left 2s linear infinite;
+    background-size: 40px 100%;
+  }
+  
+  .referee-stripes-v {
+    background: repeating-linear-gradient(0deg, #000, #000 10px, #fff 10px, #fff 20px);
+  }
+  
+  /* Hackerish glowing effect */
+  .glow {
+    @apply relative;
+    text-shadow: 0 0 5px theme('colors.accent.DEFAULT');
+  }
+  
+  .glow::before {
+    @apply absolute inset-0 opacity-20 blur-sm rounded-md -z-10;
+    content: '';
+    background: theme('colors.accent.DEFAULT');
+  }
+  
+  /* Red glow */
+  .glow-red {
+    @apply relative;
+    text-shadow: 0 0 5px theme('colors.primary.DEFAULT');
+  }
+  
+  .glow-red::before {
+    @apply absolute inset-0 opacity-20 blur-sm rounded-md -z-10;
+    content: '';
+    background: theme('colors.primary.DEFAULT');
+  }
+  
+  /* Scanline effect */
+  .scanlines {
+    @apply relative overflow-hidden;
+  }
+  
+  .scanlines::before {
+    @apply absolute inset-0 pointer-events-none z-10;
+    content: '';
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.1),
+      rgba(0, 0, 0, 0.1) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+  }
+  
+  /* Screen flicker */
+  .flicker {
+    animation: flicker 0.3s ease-in-out infinite;
+  }
+  
+  /* Glitch effect */
+  .glitch {
+    position: relative;
+    animation: glitch 0.2s ease-in-out infinite alternate-reverse;
+  }
+  
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .glitch::before {
+    left: 2px;
+    text-shadow: -1px 0 #ff0000;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch 0.5s infinite linear alternate-reverse;
+  }
+  
+  .glitch::after {
+    left: -2px;
+    text-shadow: -1px 0 #00ff00;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch 0.7s infinite linear alternate-reverse;
+  }
+}
+
+/* Referee stripe pattern for accents */
+.referee-stripes {
+  background: repeating-linear-gradient(45deg, #000, #000 10px, #fff 10px, #fff 20px);
+}
+
+/* Animatable properties from tw-animate-css if needed */
+@import "tw-animate-css";
