@@ -20,7 +20,7 @@ export default function StartScreen({ onStartSession }: StartScreenProps) {
           >
             VAR VENDETTA
           </h1>
-          <p className="mt-2 text-muted-foreground terminal-text">Track referee mistakes during matches</p>
+          <p className="mt-2 text-muted-foreground terminal-text">Track player mistakes during matches</p>
         </div>
 
         {/* Animated referee stripes - moving left to right */}

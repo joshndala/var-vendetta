@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "VAR Vendetta",
-  description: "Track referee mistakes during matches",
+  description: "Track player mistakes during matches",
 }
 
 export default function RootLayout({
