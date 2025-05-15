@@ -105,24 +105,25 @@ export default function MainUI({ sessionId, sessionStart, onEndSession }: MainUI
         <div className="container mx-auto flex justify-between items-center p-4">
           <div className="flex items-center">
             <h1 
-              className="text-2xl font-bold tracking-tighter glow-red"
+              className="text-2xl font-bold tracking-tighter text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] glow-red"
               data-text="VAR VENDETTA"
+              style={{ textShadow: "0 0 10px rgba(255,255,255,0.5)" }}
             >
               VAR VENDETTA
             </h1>
-            <div className="ml-4 px-2 py-1 text-xs bg-background/10 rounded border border-white/20 font-mono">
+            <div className="ml-4 px-2 py-1 text-xs text-white bg-gray-800/80 rounded border border-white/60 font-mono drop-shadow-md">
               ID: {sessionId.substring(0, 8)}
             </div>
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="digital-clock">
+            <div className="digital-clock text-white bg-gray-800/60 px-3 py-1 rounded border border-white/30 font-mono drop-shadow-md" style={{ textShadow: "0 0 5px rgba(255,255,255,0.5)" }}>
               <SessionTimer startTime={sessionStart} />
             </div>
             <Button
               onClick={onEndSession}
               variant="outline"
-              className="text-white border-white/30 bg-background/10 hover:bg-red-800 hover:text-white"
+              className="text-white border-white/50 bg-red-900/60 hover:bg-red-800 hover:text-white drop-shadow-md"
               size="sm"
             >
               END SESSION

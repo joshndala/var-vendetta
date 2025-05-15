@@ -53,7 +53,7 @@ export default function StartScreen({ onStartSession }: StartScreenProps) {
         
         {/* Bottom decorative elements */}
         <div className="absolute bottom-2 left-4 right-4 flex justify-between items-center text-xs terminal-text text-muted-foreground">
-          <div>VAR.SYS v1.2.4</div>
+          <div>VAR.SYS v1.0.0</div>
           <div className="flex space-x-2">
             <div className="h-2 w-2 rounded-full bg-accent animate-pulse"></div>
             <div className="h-2 w-2 rounded-full bg-secondary"></div>
