@@ -1,0 +1,155 @@
+{
+  "info": {
+    "_postman_id": "b9c1e5a5-4b5f-4d0c-9e0a-7d4c3fd742b4",
+    "name": "VAR Vendetta API",
+    "description": "API collection for testing VAR Vendetta backend endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Test API",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/test",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test"]
+        },
+        "description": "Simple test endpoint to verify API is working"
+      },
+      "response": []
+    },
+    {
+      "name": "Sample Data",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/sample-data",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "sample-data"]
+        },
+        "description": "Get sample data for testing all endpoints"
+      },
+      "response": []
+    },
+    {
+      "name": "Sample Data (specific endpoint)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/sample-data?endpoint=log",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "sample-data"],
+          "query": [
+            {
+              "key": "endpoint",
+              "value": "log"
+            }
+          ]
+        },
+        "description": "Get sample data for a specific endpoint (log, embed, askRef, or transcribe)"
+      },
+      "response": []
+    },
+    {
+      "name": "Log Text",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/log",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "log"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"This is a test transcript to be logged.\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+        },
+        "description": "Log text with timestamp"
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Embeddings",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/embed",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "embed"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"This is a sample text to generate embeddings for.\"\n}"
+        },
+        "description": "Generate embeddings for text using HuggingFace API"
+      },
+      "response": []
+    },
+    {
+      "name": "Ask Question",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/ask-ref",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ask-ref"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"What was discussed about APIs?\"\n}"
+        },
+        "description": "Ask a question and get an answer based on context"
+      },
+      "response": []
+    },
+    {
+      "name": "Transcribe (Placeholder)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/transcribe",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "transcribe"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"This is for testing only as transcription is handled by frontend\"\n}"
+        },
+        "description": "Placeholder for transcription (currently handled by frontend)"
+      },
+      "response": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+} 

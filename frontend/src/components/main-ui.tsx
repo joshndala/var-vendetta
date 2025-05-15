@@ -6,7 +6,9 @@ import type { Mistake, AIResponse } from "../../types"
 import MistakeLogger from "@/components/mistake-logger"
 import MistakeList from "@/components/mistake-list"
 import ChatPanel from "@/components/chat-panel"
+import ApiStatus from "@/components/api-status"
 import { Button } from "@/components/ui/button"
+import { askQuestion } from "@/lib/api"
 
 interface MainUIProps {
   sessionId: string
@@ -65,26 +67,30 @@ export default function MainUI({ sessionId, sessionStart, onEndSession }: MainUI
   const askRef = async () => {
     setIsLoading(true)
     try {
-      // TODO: Replace with actual API call
-      const response = await fetch("/api/ask-ref", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ mistakes }),
-      })
-
-      const data = await response.json()
-
+      // Ask about recent incidents
+      const questionText = "What were the most notable player mistakes in the recent minutes?";
+      
+      // Call our API
+      const apiResponse = await askQuestion(questionText);
+      
       const newResponse: AIResponse = {
         id: uuidv4(),
-        text: data.response,
+        text: apiResponse.answer,
         timestamp: Date.now(),
       }
 
       setResponses((prev) => [...prev, newResponse])
     } catch (error) {
       console.error("Error asking ref:", error)
+      
+      // Add a fallback response when the API fails
+      const fallbackResponse: AIResponse = {
+        id: uuidv4(),
+        text: "I couldn't analyze the recent incidents due to a technical issue. Please try again later.",
+        timestamp: Date.now(),
+      }
+      
+      setResponses((prev) => [...prev, fallbackResponse])
     } finally {
       setIsLoading(false)
     }
@@ -147,7 +153,7 @@ export default function MainUI({ sessionId, sessionStart, onEndSession }: MainUI
         
         <div className="flex justify-between items-center px-4 py-1 text-xs text-muted-foreground terminal-text">
           <div>VAR.SYS v1.2.4</div>
-          <div>ACTIVE MONITORING</div>
+          <ApiStatus apiUrl={process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"} />
           <div className="flex space-x-2 items-center">
             <div className="h-2 w-2 rounded-full bg-accent animate-pulse"></div>
             <span className="flicker">RUNNING</span>

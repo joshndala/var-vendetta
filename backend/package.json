@@ -1,0 +1,27 @@
+{
+  "name": "var-vendetta-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "next dev",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "axios": "^1.4.0",
+    "faiss-node": "^0.5.1",
+    "next": "^13.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "uuid": "^9.0.0",
+    "wink-bm25-text-search": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/react": "^18.0.0",
+    "@types/uuid": "^9.0.1",
+    "prisma": "^5.0.0",
+    "typescript": "^5.0.0"
+  }
+}

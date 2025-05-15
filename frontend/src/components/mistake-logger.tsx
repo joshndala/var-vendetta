@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Mic, MicOff } from "lucide-react"
 import type { Mistake } from "../../types"
+import { logMistake as logMistakeToApi } from "@/lib/api"
 
 // TypeScript definitions for the Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -104,7 +105,7 @@ export default function MistakeLogger({ sessionStart, onMistakeLogged }: Mistake
     };
   }, []);
 
-  const logMistake = () => {
+  const logMistake = async () => {
     // Only use finalized transcripts for logging to avoid duplication
     let fullTranscript = "";
     
@@ -121,13 +122,29 @@ export default function MistakeLogger({ sessionStart, onMistakeLogged }: Mistake
     if (fullTranscript) {
       const elapsedTime = Date.now() - sessionStart;
       
-      onMistakeLogged({
+      // Create the mistake object
+      const mistakeData: Omit<Mistake, "id"> = {
         timestamp: Date.now(),
         elapsedTime,
         transcribedText: fullTranscript,
         audioBlob: new Blob(), // Empty blob to maintain type compatibility
         audioUrl: "", // Empty string to maintain type compatibility
-      });
+      };
+      
+      // Log to frontend callback
+      onMistakeLogged(mistakeData);
+      
+      // Also log to backend API
+      try {
+        const logResponse = await logMistakeToApi({
+          ...mistakeData,
+          id: "temporary-id" // Will be replaced by the backend
+        });
+        console.log("Successfully logged to backend:", logResponse);
+      } catch (error) {
+        console.error("Failed to log to backend API:", error);
+        // We continue even if backend logging fails - data is still in frontend
+      }
       
       console.log("Mistake logged with transcript:", fullTranscript);
     } else {

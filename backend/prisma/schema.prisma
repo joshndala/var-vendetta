@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./var-vendetta.db"
+}
+
+model Session {
+  id         String       @id @default(uuid())
+  createdAt  DateTime     @default(now())
+  endedAt    DateTime?
+  title      String?
+  transcripts Transcript[]
+  mistakes   Mistake[]
+  snippets   Snippet[]
+}
+
+model Transcript {
+  id         String    @id @default(uuid())
+  sessionId  String
+  session    Session   @relation(fields: [sessionId], references: [id])
+  text       String
+  timestamp  DateTime  @default(now())
+  audioPath  String
+  mistakes   Mistake[]
+  snippets   Snippet[]
+}
+
+model Mistake {
+  id           String     @id @default(uuid())
+  sessionId    String
+  session      Session    @relation(fields: [sessionId], references: [id])
+  transcriptId String
+  transcript   Transcript @relation(fields: [transcriptId], references: [id])
+  text         String
+  timestamp    DateTime   @default(now())
+  correction   String?
+}
+
+model Snippet {
+  id           String     @id @default(uuid())
+  sessionId    String
+  session      Session    @relation(fields: [sessionId], references: [id])
+  transcriptId String
+  transcript   Transcript @relation(fields: [transcriptId], references: [id])
+  text         String
+  startTime    DateTime
+  endTime      DateTime
+  embeddings   String?    // Store as JSON string
+} 
