@@ -142,7 +142,12 @@ export default function MainUI({ sessionId, sessionStart, onEndSession }: MainUI
         </div>
 
         <div className="w-1/3 border-l border-border bg-card/50">
-          <ChatPanel responses={responses} onAskRef={askRef} isLoading={isLoading} />
+          <ChatPanel 
+            responses={responses} 
+            onAskRef={askRef}
+            isLoading={isLoading}
+            setResponses={setResponses}
+          />
         </div>
       </div>
 

@@ -11,9 +11,10 @@ interface ChatPanelProps {
   responses: AIResponse[]
   onAskRef: () => void
   isLoading: boolean
+  setResponses: (updater: (prev: AIResponse[]) => AIResponse[]) => void
 }
 
-export default function ChatPanel({ responses, onAskRef, isLoading: externalLoading }: ChatPanelProps) {
+export default function ChatPanel({ responses, onAskRef, isLoading: externalLoading, setResponses }: ChatPanelProps) {
   const chatEndRef = useRef<HTMLDivElement>(null)
   const [question, setQuestion] = useState("")
   const [internalLoading, setInternalLoading] = useState(false)
@@ -47,14 +48,23 @@ export default function ChatPanel({ responses, onAskRef, isLoading: externalLoad
         timestamp: Date.now(),
       }
       
-      // Add response to the existing list (by calling the parent component's callback)
-      onAskRef()
+      // Add response to the responses array
+      setResponses(prev => [...prev, newResponse])
       
       // Clear the question input
       setQuestion("")
     } catch (error) {
       console.error("Error asking question:", error)
-      // Optionally show an error message to the user
+      
+      // Add a fallback response when the API fails
+      const fallbackResponse: AIResponse = {
+        id: uuidv4(),
+        text: "I couldn't analyze your question due to a technical issue. Please try again later.",
+        timestamp: Date.now(),
+      }
+      
+      // Also add the fallback to the responses array
+      setResponses(prev => [...prev, fallbackResponse])
     } finally {
       setInternalLoading(false)
     }
@@ -88,43 +98,32 @@ export default function ChatPanel({ responses, onAskRef, isLoading: externalLoad
       </div>
 
       <div className="p-4 border-t border-gray-200">
-        <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Ask a question..."
-            className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleAskQuestion();
-              }
-            }}
-            disabled={isLoading}
-          />
-          <Button 
-            onClick={handleAskQuestion} 
-            disabled={isLoading || !question.trim()} 
-            className="bg-gray-800 hover:bg-gray-900"
-          >
-            {isLoading ? <Loader2 className="animate-spin" /> : <Send size={18} />}
-          </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask the referee a question..."
+              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAskQuestion();
+                }
+              }}
+              disabled={isLoading}
+            />
+            <Button 
+              onClick={handleAskQuestion} 
+              disabled={isLoading || !question.trim()} 
+              className="bg-gray-800 hover:bg-gray-900 text-white px-4"
+            >
+              {isLoading ? <Loader2 className="animate-spin" /> : <Send size={18} />}
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Ask questions about plays, incidents, or rules interpretations</p>
         </div>
-        
-        <Button onClick={onAskRef} disabled={isLoading} className="w-full py-6 bg-gray-800 hover:bg-gray-900">
-          {isLoading ? (
-            <div className="flex items-center">
-              <Loader2 className="mr-2 animate-spin" />
-              Consulting VAR...
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <MessageSquare className="mr-2" />
-              Ask About Incidents
-            </div>
-          )}
-        </Button>
       </div>
     </div>
   )

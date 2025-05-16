@@ -282,7 +282,7 @@ export default function MistakeLogger({ sessionStart, onMistakeLogged }: Mistake
       <Button
         onClick={toggleRecording}
         className={`w-full py-6 text-lg ${
-          isRecording ? "bg-red-600 hover:bg-red-700" : "bg-gray-800 hover:bg-gray-900"
+          isRecording ? "bg-red-600 hover:bg-red-700 text-white" : "bg-gray-800 hover:bg-gray-900 text-white"
         }`}
       >
         {isRecording ? (
