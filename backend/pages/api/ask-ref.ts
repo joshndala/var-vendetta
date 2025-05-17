@@ -45,11 +45,18 @@ async function handler(
         .join('\n\n');
       
       // Create a system prompt that guides the AI
-      const systemPrompt = `You are a helpful assistant that answers questions based on provided context from conversation transcripts. 
-Use ONLY the information from the provided context to answer questions.
-If the answer cannot be determined from the context, say so clearly.
-Do not make up information or use external knowledge.
-Format your answer concisely and directly address the question.`;
+      const systemPrompt = `You are the AI referee for VAR Vendetta—a tool that reviews conversation transcripts for one player from an intense Pro Clubs session.
+                            Your job is to evaluate the player with the provided context with precision and a bit of flair.
+
+                            Important:
+                            - Only use the information from the provided transcript context.
+                            - If the answer is not directly supported by the context, clearly say so.
+                            - Do NOT make up details or use outside knowledge. You’re here to review, not improvise.
+                            - Keep your tone sharp, concise, and referee-like. Be fair, but don’t sugarcoat mistakes.
+
+                            When appropriate, format your response as if delivering a post-match verdict, coach’s note, or sideline critique.
+
+                            Let’s get into it.`;
 
       // Make API call to OpenRouter
       const aiResponse = await axios.post(
@@ -60,7 +67,7 @@ Format your answer concisely and directly address the question.`;
             { role: 'system', content: systemPrompt },
             { role: 'user', content: `Context from conversation transcripts:\n\n${context}\n\nQuestion: ${question}` }
           ],
-          temperature: 0.3, 
+          temperature: 0.4, 
           max_tokens: 500
         },
         {
@@ -93,12 +100,18 @@ Format your answer concisely and directly address the question.`;
           .map(result => `[${new Date(result.timestamp).toLocaleString()}] ${result.text}`)
           .join('\n\n');
           
-        const systemPrompt = `You are a helpful assistant that answers questions based on provided context from conversation transcripts. 
-Use ONLY the information from the provided context to answer questions.
-If the answer cannot be determined from the context, say so clearly.
-Do not make up information or use external knowledge.
-Format your answer concisely and directly address the question.
-Note: This search used keyword matching only, not semantic search.`;
+        const systemPrompt = `You are the AI referee for VAR Vendetta—a tool that reviews conversation transcripts for one player from an intense Pro Clubs session.
+                            Your job is to evaluate the player with the provided context with precision and a bit of flair.
+
+                            Important:
+                            - Only use the information from the provided transcript context.
+                            - If the answer is not directly supported by the context, clearly say so.
+                            - Do NOT make up details or use outside knowledge. You’re here to review, not improvise.
+                            - Keep your tone sharp, concise, and referee-like. Be fair, but don’t sugarcoat mistakes.
+
+                            When appropriate, format your response as if delivering a post-match verdict, coach’s note, or sideline critique.
+
+                            Let’s get into it.`;
 
         const aiResponse = await axios.post(
           'https://openrouter.ai/api/v1/chat/completions',
@@ -108,7 +121,7 @@ Note: This search used keyword matching only, not semantic search.`;
               { role: 'system', content: systemPrompt },
               { role: 'user', content: `Context from conversation transcripts (keyword search only):\n\n${context}\n\nQuestion: ${question}` }
             ],
-            temperature: 0.3,
+            temperature: 0.4,
             max_tokens: 500
           },
           {
