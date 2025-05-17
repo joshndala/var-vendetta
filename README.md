@@ -1,6 +1,6 @@
 # VAR Vendetta
 
-VAR Vendetta is a Next.js application that helps record and analyze player decisions in sports. It uses hybrid retrieval methods (BM25 + vector search) to find relevant context from past decisions and generate AI-powered responses to questions.
+VAR Vendetta is a Next.js application that helps record and analyze player decisions in virtual football (e.g. EA FC Pro Clubs). It uses hybrid retrieval methods (BM25 + vector search) to find relevant context from past decisions and generate AI-powered responses to questions.
 
 ## Project Structure
 
@@ -137,7 +137,3 @@ Import this collection into Postman to test the API endpoints.
 - Hybrid search combining both approaches
 - AI-powered responses to questions using context from past transcriptions
 - CORS middleware for cross-origin requests
-
-## License
-
-[MIT](LICENSE)
