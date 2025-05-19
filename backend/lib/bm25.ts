@@ -16,6 +16,9 @@ let bm25Engine: any = null;
 let documentMap: Map<number, string> = new Map(); // Map document IDs to Snippet IDs
 let currentDocId = 0;
 
+// Flag to track if consolidation has happened
+let isConsolidated = false;
+
 // Improved tokenize function for BM25
 const tokenize = (text: string): string[] => {
   if (!text) return [];
@@ -51,6 +54,9 @@ export async function initializeBM25Engine(): Promise<void> {
       bm25Engine.defineConfig({ fldWeights: { text: 1 } });
       bm25Engine.definePrepTasks([tokenize]);
       
+      // Reset the consolidated flag
+      isConsolidated = false;
+      
       // Load existing documents from the database
       await loadDocumentsFromDb();
       console.log(`BM25 engine initialized with ${currentDocId} documents`);
@@ -68,7 +74,20 @@ async function loadDocumentsFromDb(): Promise<void> {
   if (!bm25Engine) return;
   
   try {
-    // Fetch all snippets from the database
+    // Check if the Snippet table exists by trying a count operation first
+    try {
+      await prisma.snippet.count();
+    } catch (error: any) {
+      if (error.code === 'P2021') {
+        // Table doesn't exist yet, which is fine for a new database
+        console.log('Snippet table does not exist yet. This is normal for a new database.');
+        return;
+      }
+      // If it's another type of error, re-throw it
+      throw error;
+    }
+    
+    // If we got here, the table exists, so we can proceed to fetch snippets
     const snippets = await prisma.snippet.findMany({
       orderBy: {
         startTime: 'asc'
@@ -88,11 +107,21 @@ async function loadDocumentsFromDb(): Promise<void> {
     
     // Consolidate the added documents
     if (currentDocId > 0) {
-      bm25Engine.consolidate();
-      console.log(`BM25 index consolidated with ${currentDocId} documents`);
+      try {
+        bm25Engine.consolidate();
+        isConsolidated = true; // Mark as consolidated
+        console.log(`BM25 index consolidated with ${currentDocId} documents`);
+      } catch (error: any) {
+        if (error.message && error.message.includes('document collection is too small for consolidation')) {
+          console.log('Not enough documents for BM25 consolidation. This is normal for a new database.');
+        } else {
+          throw error;
+        }
+      }
     }
   } catch (error) {
     console.error('Error loading documents from database:', error);
+    // Don't throw here, just log the error and continue
   }
 }
 
@@ -110,14 +139,46 @@ export async function addDocument(snippetId: string, text: string): Promise<bool
       await initializeBM25Engine();
     }
     
-    if (bm25Engine) {
-      const docId = currentDocId++;
-      bm25Engine.addDoc({ text }, docId.toString());
-      documentMap.set(docId, snippetId);
-      
-      // Consolidate after adding new documents
-      bm25Engine.consolidate();
-      return true;
+    try {
+      // Try to add the document to the current engine
+      if (bm25Engine) {
+        const docId = currentDocId++;
+        bm25Engine.addDoc({ text }, docId.toString());
+        documentMap.set(docId, snippetId);
+        
+        // Consolidate after adding new documents if not already consolidated
+        if (!isConsolidated) {
+          bm25Engine.consolidate();
+          isConsolidated = true;
+        }
+        return true;
+      }
+    } catch (error: any) {
+      // Check if the error is related to post-consolidation adding
+      if (error.message && error.message.includes('post consolidation adding/learning is not possible')) {
+        console.log('Reinitializing BM25 engine to add new documents...');
+        
+        // Store the current document mappings
+        const oldDocumentMap = new Map(documentMap);
+        
+        // Reset the engine and reload from database (will include the new document)
+        await resetBM25Index();
+        
+        // After reset, ensure the snippet is included (it should be, as it's in the database)
+        const snippetInSearch = await searchDocuments(text, 10);
+        const isIncluded = snippetInSearch.some(result => result.snippetId === snippetId);
+        
+        if (isIncluded) {
+          console.log(`Document for snippet ${snippetId} successfully included in reinitialized index.`);
+          return true;
+        } else {
+          console.warn(`Document for snippet ${snippetId} may not be included in the search index.`);
+          return false;
+        }
+      } else {
+        // If it's a different error, rethrow it
+        throw error;
+      }
     }
     
     return false;
@@ -188,6 +249,7 @@ export async function resetBM25Index(): Promise<void> {
   bm25Engine = null;
   documentMap.clear();
   currentDocId = 0;
+  isConsolidated = false;
   await initializeBM25Engine();
 }
 

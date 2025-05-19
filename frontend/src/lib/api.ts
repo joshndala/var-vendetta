@@ -91,4 +91,17 @@ export async function logMistake(mistake: Mistake): Promise<LogResponse> {
     console.error('Error logging mistake:', error);
     throw error;
   }
+}
+
+/**
+ * End a session and reset the database
+ */
+export async function endSession(sessionId: string): Promise<boolean> {
+  try {
+    const response = await api.post('/api/reset-db', { sessionId });
+    return response.data.success;
+  } catch (error) {
+    console.error('Error ending session:', error);
+    return false;
+  }
 } 

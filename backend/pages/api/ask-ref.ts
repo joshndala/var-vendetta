@@ -51,12 +51,49 @@ async function handler(
                             Important:
                             - Only use the information from the provided transcript context.
                             - If the answer is not directly supported by the context, clearly say so.
-                            - Do NOT make up details or use outside knowledge. You’re here to review, not improvise.
-                            - Keep your tone sharp, concise, and referee-like. Be fair, but don’t sugarcoat mistakes.
+                            - Do NOT make up details or use outside knowledge. You're here to review, not improvise.
+                            - Keep your tone sharp, concise, and referee-like. Be fair, but don't sugarcoat mistakes.
 
-                            When appropriate, format your response as if delivering a post-match verdict, coach’s note, or sideline critique.
+                            ===== FOOTBALL (SOCCER) TERMINOLOGY =====
+                            Understand these common football terms when analyzing player actions:
 
-                            Let’s get into it.`;
+                            SCORING & ATTACKING:
+                            - "Scored/banged/slotted a goal" - Successfully put the ball in the net
+                            - "Assist" - Final pass leading to a goal
+                            - "Through ball" - Pass into space behind defenders
+                            - "Cross" - Ball played from wide areas into the penalty box
+                            - "Shot on target" - Attempt that would go in if not saved
+                            - "Finesse shot" - Placed shot with curl rather than power
+                            - "Tap-in" - Easy goal from very close range
+
+                            DEFENDING & MISTAKES:
+                            - "Conceded a goal" - Allowed the opposition to score
+                            - "Clean sheet" - No goals conceded by goalkeeper/defense
+                            - "Tackle" - Attempt to take ball from opponent
+                            - "Block" - Stopping a shot or pass with body
+                            - "Interception" - Taking the ball during an opponent's pass
+                            - "Clearance" - Kicking ball away from danger
+                            - "Ball watching" - Not tracking opponents due to focusing only on the ball
+
+                            FOULS & DISCIPLINE:
+                            - "Yellow card" - Caution from referee
+                            - "Red card" - Dismissal from match
+                            - "Sent off" - Received a red card
+                            - "Penalty" - Free shot after foul in penalty area
+                            - "Free kick" - Restart after a foul
+                            - "Simulation/diving" - Faking a foul
+
+                            PLAYER POSITIONS:
+                            - "Striker/Forward" - Attacking player focused on scoring
+                            - "Winger" - Wide attacking player
+                            - "Midfielder" - Central player linking defense and attack
+                            - "Defender/Center-back" - Player focused on stopping attacks
+                            - "Full-back/Wing-back" - Wide defensive players
+                            - "Goalkeeper/Keeper" - Player who can use hands in own penalty area
+
+                            When appropriate, format your response as if delivering a post-match verdict, coach's note, or sideline critique.
+
+                            Let's get into it.`;
 
       // Make API call to OpenRouter
       const aiResponse = await axios.post(
@@ -68,7 +105,7 @@ async function handler(
             { role: 'user', content: `Context from conversation transcripts:\n\n${context}\n\nQuestion: ${question}` }
           ],
           temperature: 0.4, 
-          max_tokens: 500
+          max_tokens: 600
         },
         {
           headers: {
@@ -106,12 +143,49 @@ async function handler(
                             Important:
                             - Only use the information from the provided transcript context.
                             - If the answer is not directly supported by the context, clearly say so.
-                            - Do NOT make up details or use outside knowledge. You’re here to review, not improvise.
-                            - Keep your tone sharp, concise, and referee-like. Be fair, but don’t sugarcoat mistakes.
+                            - Do NOT make up details or use outside knowledge. You're here to review, not improvise.
+                            - Keep your tone sharp, concise, and referee-like. Be fair, but don't sugarcoat mistakes.
 
-                            When appropriate, format your response as if delivering a post-match verdict, coach’s note, or sideline critique.
+                            ===== FOOTBALL (SOCCER) TERMINOLOGY =====
+                            Understand these common football terms when analyzing player actions:
 
-                            Let’s get into it.`;
+                            SCORING & ATTACKING:
+                            - "Scored/banged/slotted a goal" - Successfully put the ball in the net
+                            - "Assist" - Final pass leading to a goal
+                            - "Through ball" - Pass into space behind defenders
+                            - "Cross" - Ball played from wide areas into the penalty box
+                            - "Shot on target" - Attempt that would go in if not saved
+                            - "Finesse shot" - Placed shot with curl rather than power
+                            - "Tap-in" - Easy goal from very close range
+
+                            DEFENDING & MISTAKES:
+                            - "Conceded a goal" - Allowed the opposition to score
+                            - "Clean sheet" - No goals conceded by goalkeeper/defense
+                            - "Tackle" - Attempt to take ball from opponent
+                            - "Block" - Stopping a shot or pass with body
+                            - "Interception" - Taking the ball during an opponent's pass
+                            - "Clearance" - Kicking ball away from danger
+                            - "Ball watching" - Not tracking opponents due to focusing only on the ball
+
+                            FOULS & DISCIPLINE:
+                            - "Yellow card" - Caution from referee
+                            - "Red card" - Dismissal from match
+                            - "Sent off" - Received a red card
+                            - "Penalty" - Free shot after foul in penalty area
+                            - "Free kick" - Restart after a foul
+                            - "Simulation/diving" - Faking a foul
+
+                            PLAYER POSITIONS:
+                            - "Striker/Forward" - Attacking player focused on scoring
+                            - "Winger" - Wide attacking player
+                            - "Midfielder" - Central player linking defense and attack
+                            - "Defender/Center-back" - Player focused on stopping attacks
+                            - "Full-back/Wing-back" - Wide defensive players
+                            - "Goalkeeper/Keeper" - Player who can use hands in own penalty area
+
+                            When appropriate, format your response as if delivering a post-match verdict, coach's note, or sideline critique.
+
+                            Let's get into it.`;
 
         const aiResponse = await axios.post(
           'https://openrouter.ai/api/v1/chat/completions',
@@ -122,7 +196,7 @@ async function handler(
               { role: 'user', content: `Context from conversation transcripts (keyword search only):\n\n${context}\n\nQuestion: ${question}` }
             ],
             temperature: 0.4,
-            max_tokens: 500
+            max_tokens: 600
           },
           {
             headers: {

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import StartScreen from "@/components/start-screen"
 import MainUI from "@/components/main-ui"
 import { v4 as uuidv4 } from "uuid"
+import { endSession as endSessionApi } from "@/lib/api"
 
 export default function Home() {
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -32,7 +33,16 @@ export default function Home() {
     localStorage.setItem("varVendetta_sessionStart", startTime.toString())
   }
 
-  const endSession = () => {
+  const endSession = async () => {
+    if (sessionId) {
+      // Call the API to reset the database
+      try {
+        await endSessionApi(sessionId)
+      } catch (error) {
+        console.error("Error ending session:", error)
+      }
+    }
+    
     // Clear session data from state
     setSessionId(null)
     setSessionStart(null)
@@ -41,9 +51,9 @@ export default function Home() {
     localStorage.removeItem("varVendetta_sessionId")
     localStorage.removeItem("varVendetta_sessionStart")
 
-    // Optionally, you could also clear the mistakes and responses
-    // localStorage.removeItem("varVendetta_mistakes")
-    // localStorage.removeItem("varVendetta_responses")
+    // Also clear the mistakes and responses
+    localStorage.removeItem("varVendetta_mistakes")
+    localStorage.removeItem("varVendetta_responses")
   }
 
   return (

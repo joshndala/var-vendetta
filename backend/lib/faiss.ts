@@ -35,6 +35,19 @@ async function loadEmbeddingsFromDb(): Promise<void> {
   if (!faissIndex) return;
   
   try {
+    // Check if the Snippet table exists by trying a count operation first
+    try {
+      await prisma.snippet.count();
+    } catch (error) {
+      if (error.code === 'P2021') {
+        // Table doesn't exist yet, which is fine for a new database
+        console.log('Snippet table does not exist yet. This is normal for a new database.');
+        return;
+      }
+      // If it's another type of error, re-throw it
+      throw error;
+    }
+    
     // Get all snippets with embeddings
     const snippets = await prisma.snippet.findMany({
       where: {
@@ -70,6 +83,7 @@ async function loadEmbeddingsFromDb(): Promise<void> {
     }
   } catch (error) {
     console.error('Error loading embeddings from database:', error);
+    // Don't throw here to allow the application to continue
   }
 }
 
