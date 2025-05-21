@@ -49,4 +49,5 @@ model Snippet {
   startTime    DateTime
   endTime      DateTime
   embeddings   String?    // Store as JSON string
+  tags         String?    // JSON array of tags as a string
 } 

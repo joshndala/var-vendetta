@@ -3,8 +3,10 @@ import { AskRefRequest, AskRefResponse, SearchResult } from '../../types';
 import { hybridSearch } from '../../lib/retrieval';
 import axios from 'axios';
 import { withCors } from '../../lib/cors';
+import { PrismaClient } from '@prisma/client';
 
 const referer = process.env.NEXT_PUBLIC_APP_URL;
+const prisma = new PrismaClient();
 
 async function handler(
   req: NextApiRequest,
@@ -39,10 +41,20 @@ async function handler(
       // Perform hybrid search to retrieve relevant context
       const searchResults = await hybridSearch(question, embeddings, 5);
       
-      // Format context for the AI
-      const context = searchResults
-        .map(result => `[${new Date(result.timestamp).toLocaleString()}] ${result.text}`)
-        .join('\n\n');
+      // Format context for the AI, including tags
+      const context = await Promise.all(searchResults.map(async result => {
+        // Fetch tags for this snippet from the database
+        const snippet = await prisma.snippet.findUnique({ where: { id: result.id }, select: { tags: true } });
+        let tags: string[] = [];
+        if (snippet && snippet.tags) {
+          try {
+            tags = JSON.parse(snippet.tags);
+          } catch {}
+        }
+        const tagStr = tags.length > 0 ? `(tags: ${tags.join(', ')}) ` : '';
+        return `[${new Date(result.timestamp).toLocaleString()}] ${tagStr}${result.text}`;
+      }));
+      const contextStr = (await Promise.all(context)).join('\n\n');
       
       // Create a system prompt that guides the AI
       const systemPrompt = `You are the AI referee for VAR Vendetta—a tool that reviews conversation transcripts for one player from an intense Pro Clubs session.
@@ -54,42 +66,13 @@ async function handler(
                             - Do NOT make up details or use outside knowledge. You're here to review, not improvise.
                             - Keep your tone sharp, concise, and referee-like. Be fair, but don't sugarcoat mistakes.
 
-                            ===== FOOTBALL (SOCCER) TERMINOLOGY =====
-                            Understand these common football terms when analyzing player actions:
+                            ===== FOOTBALL (SOCCER) TAGS =====
+                            Each log is annotated with tags in parentheses, e.g. (tags: bad pass, conceded goal). Tags are grouped as:
+                            - Actions: goal, assist, bad pass, interception, foul, save, missed shot
+                            - Outcomes: conceded goal, red card, yellow card, penalty, own goal
+                            - Modifiers: reckless, lazy, clutch, risky
 
-                            SCORING & ATTACKING:
-                            - "Scored/banged/slotted a goal" - Successfully put the ball in the net
-                            - "Assist" - Final pass leading to a goal
-                            - "Through ball" - Pass into space behind defenders
-                            - "Cross" - Ball played from wide areas into the penalty box
-                            - "Shot on target" - Attempt that would go in if not saved
-                            - "Finesse shot" - Placed shot with curl rather than power
-                            - "Tap-in" - Easy goal from very close range
-
-                            DEFENDING & MISTAKES:
-                            - "Conceded a goal" - Allowed the opposition to score
-                            - "Clean sheet" - No goals conceded by goalkeeper/defense
-                            - "Tackle" - Attempt to take ball from opponent
-                            - "Block" - Stopping a shot or pass with body
-                            - "Interception" - Taking the ball during an opponent's pass
-                            - "Clearance" - Kicking ball away from danger
-                            - "Ball watching" - Not tracking opponents due to focusing only on the ball
-
-                            FOULS & DISCIPLINE:
-                            - "Yellow card" - Caution from referee
-                            - "Red card" - Dismissal from match
-                            - "Sent off" - Received a red card
-                            - "Penalty" - Free shot after foul in penalty area
-                            - "Free kick" - Restart after a foul
-                            - "Simulation/diving" - Faking a foul
-
-                            PLAYER POSITIONS:
-                            - "Striker/Forward" - Attacking player focused on scoring
-                            - "Winger" - Wide attacking player
-                            - "Midfielder" - Central player linking defense and attack
-                            - "Defender/Center-back" - Player focused on stopping attacks
-                            - "Full-back/Wing-back" - Wide defensive players
-                            - "Goalkeeper/Keeper" - Player who can use hands in own penalty area
+                            Use these tags to understand the meaning of each log. Summarize patterns across multiple logs when possible (e.g., frequent "bad pass" tags). Reason about what the tags imply, but only use the provided context.
 
                             When appropriate, format your response as if delivering a post-match verdict, coach's note, or sideline critique.
 
@@ -102,7 +85,7 @@ async function handler(
           model: 'google/gemini-2.0-flash-001',
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Context from conversation transcripts:\n\n${context}\n\nQuestion: ${question}` }
+            { role: 'user', content: `Context from conversation transcripts:\n\n${contextStr}\n\nQuestion: ${question}` }
           ],
           temperature: 0.4, 
           max_tokens: 600
@@ -133,10 +116,19 @@ async function handler(
       
       // Even with embedding failure, we can still try to get an AI answer
       try {
-        const context = searchResults
-          .map(result => `[${new Date(result.timestamp).toLocaleString()}] ${result.text}`)
-          .join('\n\n');
-          
+        const context = await Promise.all(searchResults.map(async result => {
+          const snippet = await prisma.snippet.findUnique({ where: { id: result.id }, select: { tags: true } });
+          let tags: string[] = [];
+          if (snippet && snippet.tags) {
+            try {
+              tags = JSON.parse(snippet.tags);
+            } catch {}
+          }
+          const tagStr = tags.length > 0 ? `(tags: ${tags.join(', ')}) ` : '';
+          return `[${new Date(result.timestamp).toLocaleString()}] ${tagStr}${result.text}`;
+        }));
+        const contextStr = context.join('\n\n');
+        
         const systemPrompt = `You are the AI referee for VAR Vendetta—a tool that reviews conversation transcripts for one player from an intense Pro Clubs session.
                             Your job is to evaluate the player with the provided context with precision and a bit of flair.
 
@@ -146,42 +138,13 @@ async function handler(
                             - Do NOT make up details or use outside knowledge. You're here to review, not improvise.
                             - Keep your tone sharp, concise, and referee-like. Be fair, but don't sugarcoat mistakes.
 
-                            ===== FOOTBALL (SOCCER) TERMINOLOGY =====
-                            Understand these common football terms when analyzing player actions:
+                            ===== FOOTBALL (SOCCER) TAGS =====
+                            Each log is annotated with tags in parentheses, e.g. (tags: bad pass, conceded goal). Tags are grouped as:
+                            - Actions: goal, assist, bad pass, interception, foul, save, missed shot
+                            - Outcomes: conceded goal, red card, yellow card, penalty, own goal
+                            - Modifiers: reckless, lazy, clutch, risky
 
-                            SCORING & ATTACKING:
-                            - "Scored/banged/slotted a goal" - Successfully put the ball in the net
-                            - "Assist" - Final pass leading to a goal
-                            - "Through ball" - Pass into space behind defenders
-                            - "Cross" - Ball played from wide areas into the penalty box
-                            - "Shot on target" - Attempt that would go in if not saved
-                            - "Finesse shot" - Placed shot with curl rather than power
-                            - "Tap-in" - Easy goal from very close range
-
-                            DEFENDING & MISTAKES:
-                            - "Conceded a goal" - Allowed the opposition to score
-                            - "Clean sheet" - No goals conceded by goalkeeper/defense
-                            - "Tackle" - Attempt to take ball from opponent
-                            - "Block" - Stopping a shot or pass with body
-                            - "Interception" - Taking the ball during an opponent's pass
-                            - "Clearance" - Kicking ball away from danger
-                            - "Ball watching" - Not tracking opponents due to focusing only on the ball
-
-                            FOULS & DISCIPLINE:
-                            - "Yellow card" - Caution from referee
-                            - "Red card" - Dismissal from match
-                            - "Sent off" - Received a red card
-                            - "Penalty" - Free shot after foul in penalty area
-                            - "Free kick" - Restart after a foul
-                            - "Simulation/diving" - Faking a foul
-
-                            PLAYER POSITIONS:
-                            - "Striker/Forward" - Attacking player focused on scoring
-                            - "Winger" - Wide attacking player
-                            - "Midfielder" - Central player linking defense and attack
-                            - "Defender/Center-back" - Player focused on stopping attacks
-                            - "Full-back/Wing-back" - Wide defensive players
-                            - "Goalkeeper/Keeper" - Player who can use hands in own penalty area
+                            Use these tags to understand the meaning of each log. Summarize patterns across multiple logs when possible (e.g., frequent "bad pass" tags). Reason about what the tags imply, but only use the provided context.
 
                             When appropriate, format your response as if delivering a post-match verdict, coach's note, or sideline critique.
 
@@ -193,7 +156,7 @@ async function handler(
             model: 'google/gemini-2.0-flash-001',
             messages: [
               { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Context from conversation transcripts (keyword search only):\n\n${context}\n\nQuestion: ${question}` }
+              { role: 'user', content: `Context from conversation transcripts (keyword search only):\n\n${contextStr}\n\nQuestion: ${question}` }
             ],
             temperature: 0.4,
             max_tokens: 600

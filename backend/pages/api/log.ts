@@ -5,6 +5,7 @@ import { addDocument } from '../../lib/bm25';
 import { withCors } from '../../lib/cors';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import axios from 'axios';
 
 const execAsync = promisify(exec);
 
@@ -31,7 +32,7 @@ async function handler(
       try {
         await prisma.session.count();
       } catch (error) {
-        if (error.code === 'P2021') {
+        if ((error as any).code === 'P2021') {
           // Database tables don't exist yet, create them
           console.log('Creating database tables...');
           await execAsync('npx prisma db push');
@@ -67,7 +68,21 @@ async function handler(
         },
       });
       
-      // Create a snippet from this transcript
+      // Call /api/tag-log to get tags for this transcript
+      let tags: string[] = [];
+      try {
+        const tagRes = await axios.post(
+          `${req.headers.origin || 'http://localhost:3000'}/api/tag-log`,
+          { text },
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+        tags = tagRes.data.tags || [];
+      } catch (tagError) {
+        console.error('Error tagging log:', tagError);
+        tags = [];
+      }
+      
+      // Create a snippet from this transcript, storing tags as JSON string
       const snippet = await prisma.snippet.create({
         data: {
           sessionId,
@@ -75,6 +90,7 @@ async function handler(
           text,
           startTime: new Date(timestamp),
           endTime: new Date(timestamp), // TODO: Calculate actual end time
+          tags: JSON.stringify(tags),
         },
       });
       
