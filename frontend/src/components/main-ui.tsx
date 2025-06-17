@@ -159,7 +159,7 @@ export default function MainUI({ sessionId, sessionStart, onEndSession }: MainUI
         
         <div className="flex justify-between items-center px-4 py-1 text-xs text-muted-foreground terminal-text">
           <div>VAR.SYS v1.0.0</div>
-          <ApiStatus apiUrl={process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"} />
+          <ApiStatus apiUrl={process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"} />
           <div className="flex space-x-2 items-center">
             <div className="h-2 w-2 rounded-full bg-accent animate-pulse"></div>
             <span className="flicker">RUNNING</span>

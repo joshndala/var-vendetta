@@ -3,12 +3,6 @@ import prisma from '../../lib/prisma';
 import { resetBM25Index } from '../../lib/bm25';
 import { resetFaissIndex } from '../../lib/faiss';
 import { withCors } from '../../lib/cors';
-import fs from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
 
 async function handler(
   req: NextApiRequest,
@@ -35,22 +29,18 @@ async function handler(
     console.log('Resetting FAISS index...');
     await resetFaissIndex();
 
-    // Now clean up the database - first mark session as ended
-    await prisma.session.update({
-      where: { id: sessionId },
-      data: { endedAt: new Date() }
-    });
-
-    console.log('Session marked as ended');
-    
-    // If you want to completely reset the database (more aggressive approach)
-    // Recreate the database tables
-    console.log('Recreating database tables...');
-    await execAsync('npx prisma db push --force-reset');
+    // Delete all records in reverse order of dependencies
+    console.log('Deleting all records...');
+    await prisma.$transaction([
+      prisma.mistake.deleteMany({}),
+      prisma.snippet.deleteMany({}),
+      prisma.transcript.deleteMany({}),
+      prisma.session.deleteMany({})
+    ]);
 
     return res.status(200).json({ 
       success: true, 
-      message: 'Session ended, database reset, and search indexes cleared successfully' 
+      message: 'Session ended and all data cleared successfully' 
     });
   } catch (error) {
     console.error('Error in reset-db endpoint:', error);

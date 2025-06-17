@@ -2,7 +2,7 @@ import { Mistake } from "../../types";
 import axios from "axios";
 
 // API base URL - change this to point to your backend server
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // Create an axios instance with default config
 const api = axios.create({
