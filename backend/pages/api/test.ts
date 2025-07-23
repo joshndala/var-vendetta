@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { withCors } from '../../lib/cors';
 
 async function handler(
   req: NextApiRequest,
@@ -10,18 +9,20 @@ async function handler(
   }
 
   try {
-    // Simple health check
+    // Simple health check without requiring environment variables
     res.status(200).json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
+      message: 'Backend is running'
     });
   } catch (error) {
     res.status(500).json({ 
       status: 'error', 
-      message: 'Health check failed' 
+      message: 'Health check failed',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }
 
-export default withCors(handler); 
+export default handler; 
