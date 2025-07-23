@@ -6,6 +6,7 @@ import { withCors } from '../../lib/cors';
 import { getTagsForSport } from '../../lib/sport-config';
 import { PlayerDetectionService } from '../../lib/player-detection';
 import axios from 'axios';
+import { sanitizeError, safeLog } from '../../lib/env-validation';
 
 // This is a stub implementation
 // Frontend handles audio-to-text conversion, so this will be properly implemented later
@@ -111,7 +112,7 @@ async function handler(
     try {
       const separateRes = await axios.post(
         'http://localhost:3001/api/separate-events',
-        { text, sport },
+        { text, sport, sessionId },
         { headers: { 'Content-Type': 'application/json' } }
       );
       separatedEvents = separateRes.data.events || [];
@@ -207,7 +208,7 @@ async function handler(
           if (updateError) {
             console.error('Error storing embeddings:', updateError);
           } else {
-            console.log('Embeddings stored successfully for snippet:', snippet.id);
+            safeLog('Embeddings stored successfully for snippet ID:', { id: snippet.id });
           }
         }
       } catch (embedError) {

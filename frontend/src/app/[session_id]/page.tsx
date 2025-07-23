@@ -30,6 +30,14 @@ interface SessionPageProps {
 export default function SessionPage({ params }: SessionPageProps) {
   const router = useRouter()
   const [sessionId, setSessionId] = useState<string>("")
+  const [sessionStart, setSessionStart] = useState<number>(Date.now())
+  const [events, setEvents] = useState<Mistake[]>([])
+  const [responses, setResponses] = useState<AIResponse[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
+  const [players, setPlayers] = useState<Player[]>([])
+  const [selectedSport, setSelectedSport] = useState<string>("")
+  const [isRefreshing, setIsRefreshing] = useState(false)
   
   // Await params in useEffect
   useEffect(() => {
@@ -39,16 +47,6 @@ export default function SessionPage({ params }: SessionPageProps) {
     }
     getSessionId()
   }, [params])
-  const [sessionStart, setSessionStart] = useState<number>(Date.now())
-  const [events, setEvents] = useState<Mistake[]>([])
-  const [responses, setResponses] = useState<AIResponse[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [selectedPlayer, setSelectedPlayer] = useState<string>("")
-  const [selectedEventType, setSelectedEventType] = useState<string>("")
-  const [timeFilter, setTimeFilter] = useState<string>("all")
-  const [players, setPlayers] = useState<Player[]>([])
-  const [selectedSport, setSelectedSport] = useState<string>("")
-  const [isRefreshing, setIsRefreshing] = useState(false)
   
   // Load events from localStorage and backend on mount
   useEffect(() => {
@@ -99,44 +97,10 @@ export default function SessionPage({ params }: SessionPageProps) {
         }
       }
 
-      // Load events from localStorage first for immediate display
-      const storedEvents = localStorage.getItem(`coachDeck_events_${sessionId}`)
-      if (storedEvents) {
-        try {
-          const parsedEvents = JSON.parse(storedEvents)
-          setEvents(parsedEvents)
-        } catch (error) {
-          console.error("Error parsing stored events:", error)
-        }
-      }
-      
-      // Then try to load from backend
-      try {
-        const backendEvents = await getEvents(sessionId)
-        if (backendEvents.length > 0) {
-          // Transform backend events to match frontend format
-          const transformedEvents = backendEvents.map(event => ({
-            id: event.id,
-            notes: event.text,
-            timestamp: new Date(event.timestamp).getTime() - sessionStart,
-            player: undefined, // Will be determined by backend
-            type: undefined,   // Will be determined by backend
-            tags: event.tags
-          }))
-          
-          // Merge with localStorage events, preferring backend data
-          const mergedEvents = [...transformedEvents]
-          setEvents(mergedEvents)
-          
-          // Update localStorage with merged data
-          localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(mergedEvents))
-        }
-      } catch (error) {
-        console.error("Error loading events from backend:", error)
-        // Continue with localStorage events if backend fails
-      }
+      // Load events from backend
+      await loadEventsFromBackend()
     }
-    
+
     initializeSession()
   }, [sessionId]) // Removed sessionStart from dependencies to prevent infinite loop
 
@@ -146,123 +110,190 @@ export default function SessionPage({ params }: SessionPageProps) {
   //   
   //   const interval = setInterval(() => {
   //     loadEventsFromBackend()
-  //   }, 5000) // Refresh every 5 seconds
+  //   }, 5000)
   //   
   //   return () => clearInterval(interval)
   // }, [sessionId])
 
-  // Function to load events from backend
   const loadEventsFromBackend = async () => {
     if (!sessionId) return
     
     setIsRefreshing(true)
     try {
       const backendEvents = await getEvents(sessionId)
-      if (backendEvents.length > 0) {
-        // Transform backend events to match frontend format
-        const transformedEvents = backendEvents.map(event => ({
-          id: event.id,
-          notes: event.text,
-          timestamp: new Date(event.timestamp).getTime() - sessionStart,
-          player: undefined,
-          type: undefined,
-          tags: event.tags
-        }))
-        
-        setEvents(transformedEvents)
-        localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(transformedEvents))
-        console.log(`Loaded ${transformedEvents.length} events from backend`)
-      }
+      
+      // Convert backend events to frontend format
+      const convertedEvents = backendEvents.map((event: any) => {
+        try {
+          console.log('Processing event:', event); // Debug log
+          
+          // Extract player name from players array or use first player if available
+          let playerName = "Unknown"
+          
+          // Handle different event types
+          if (event.eventType === 'team') {
+            playerName = "Team"
+            console.log('Team event detected, setting player to Team'); // Debug log
+          } else if (event.eventType === 'opponent') {
+            playerName = "Opposition"
+          } else if (event.players && event.players.length > 0) {
+            // If players is an array of strings, use the first one
+            if (typeof event.players[0] === 'string') {
+              playerName = event.players[0]
+            }
+            // If players is an array of objects, use the name property
+            else if (event.players[0] && typeof event.players[0] === 'object' && event.players[0].name) {
+              playerName = event.players[0].name
+            }
+          }
+          
+          console.log('Final player name:', playerName); // Debug log
+          
+          // Map event type from backend to frontend format
+          let eventType = "Other"
+          if (event.eventType) {
+            // Map backend event types to frontend event types
+            const typeMapping: { [key: string]: string } = {
+              'goal': 'Goal',
+              'assist': 'Assist',
+              'pass': 'Pass',
+              'shot': 'Shot Off Target',
+              'save': 'Save',
+              'foul': 'Foul',
+              'tackle': 'Tackle',
+              'interception': 'Interception',
+              'corner': 'Corner',
+              'free_kick': 'Free Kick',
+              'penalty': 'Penalty',
+              'substitution': 'Substitution',
+              'injury': 'Injury',
+              'tactical_change': 'Tactical Change',
+              'formation_change': 'Formation Change',
+              'time_out': 'Time Out',
+              'team': 'Team Event',
+              'opponent': 'Opponent Event',
+              'observation': 'Other'
+            }
+            eventType = typeMapping[event.eventType] || 'Other'
+          }
+          
+          // Ensure timestamp is valid
+          let timestamp = Date.now()
+          if (event.timestamp) {
+            try {
+              timestamp = new Date(event.timestamp).getTime()
+              if (isNaN(timestamp)) {
+                console.warn('Invalid timestamp, using current time:', event.timestamp)
+                timestamp = Date.now()
+              }
+            } catch (error) {
+              console.warn('Error parsing timestamp, using current time:', error)
+              timestamp = Date.now()
+            }
+          }
+          
+          return {
+            id: event.id || `event-${Date.now()}-${Math.random()}`,
+            player: playerName,
+            type: eventType,
+            notes: event.text || "",
+            timestamp: timestamp,
+            tags: event.tags || [],
+            backendResponse: event
+          }
+        } catch (error) {
+          console.error('Error processing event:', error, event)
+          // Return a fallback event
+          return {
+            id: `error-event-${Date.now()}-${Math.random()}`,
+            player: "Unknown",
+            type: "Other",
+            notes: event.text || "Error processing event",
+            timestamp: Date.now(),
+            tags: [],
+            backendResponse: event
+          }
+        }
+      })
+      
+      setEvents(convertedEvents)
+      
+      // Save to localStorage
+      localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(convertedEvents))
     } catch (error) {
       console.error("Error loading events from backend:", error)
+      // Fallback to localStorage if backend fails
+      const storedEvents = localStorage.getItem(`coachDeck_events_${sessionId}`)
+      if (storedEvents) {
+        try {
+          setEvents(JSON.parse(storedEvents))
+        } catch (error) {
+          console.error("Error parsing stored events:", error)
+        }
+      }
     } finally {
       setIsRefreshing(false)
     }
   }
 
-  // Save events to localStorage whenever they change
-  useEffect(() => {
-    if (!sessionId) return
-    localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(events))
-  }, [events, sessionId])
-
-  // Save responses to localStorage whenever they change
-  useEffect(() => {
-    if (!sessionId) return
-    localStorage.setItem(`coachDeck_responses_${sessionId}`, JSON.stringify(responses))
-  }, [responses, sessionId])
-
-  // Save session start time
-  useEffect(() => {
-    if (!sessionId) return
-    localStorage.setItem(`coachDeck_session_start_${sessionId}`, sessionStart.toString())
-  }, [sessionStart, sessionId])
-
-  // Save players to localStorage whenever they change
-  useEffect(() => {
-    if (!sessionId || players.length === 0) return
-    localStorage.setItem(`coachDeck_players_${sessionId}`, JSON.stringify(players))
-  }, [players, sessionId])
-
-  // Save sport to localStorage whenever it changes
-  useEffect(() => {
-    if (!sessionId || !selectedSport) return
-    localStorage.setItem(`coachDeck_sport_${sessionId}`, selectedSport)
-  }, [selectedSport, sessionId])
-
-
-
   const addEvent = (event: { notes: string; timestamp: number; backendResponse?: any }) => {
-    if (!sessionId) {
-      console.error("Session ID not available")
-      return
-    }
-    
-    if (event.backendResponse) {
-      // Simple approach: just refresh from backend after a short delay
-      setTimeout(() => {
-        loadEventsFromBackend()
-      }, 1000)
-    } else {
-      // Fallback for when backend call fails
-      const newEvent: Mistake = {
+    try {
+      const newEvent = {
         id: uuidv4(),
+        player: "Unknown",
+        type: "Other",
         notes: event.notes,
         timestamp: event.timestamp,
-        player: undefined, // Will be determined by backend
-        type: undefined,   // Will be determined by backend
+        tags: [],
+        backendResponse: event.backendResponse
       }
-      setEvents((prev) => [...prev, newEvent])
+      
+      setEvents(prev => {
+        try {
+          const updatedEvents = [newEvent, ...prev]
+          // Save to localStorage with the updated events
+          localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(updatedEvents))
+          return updatedEvents
+        } catch (error) {
+          console.error('Error updating events:', error)
+          return prev
+        }
+      })
+      
+      // Refresh events from backend after a delay to get the separated events
+      setTimeout(() => {
+        loadEventsFromBackend()
+      }, 2000)
+    } catch (error) {
+      console.error('Error adding event:', error)
     }
   }
 
   const askAI = async (question: string) => {
-    if (!sessionId) {
-      console.error("Session ID not available")
-      return
-    }
+    if (!sessionId) return
     
     setIsLoading(true)
     try {
-      const apiResponse = await askQuestion(question);
-      
+      const response = await askQuestion(question)
       const newResponse: AIResponse = {
         id: uuidv4(),
-        text: apiResponse.answer,
-        timestamp: Date.now(),
+        text: response.answer,
+        timestamp: Date.now()
       }
-
-      setResponses((prev) => [...prev, newResponse])
+      
+      setResponses(prev => {
+        try {
+          const updatedResponses = [newResponse, ...prev]
+          // Save to localStorage
+          localStorage.setItem(`coachDeck_responses_${sessionId}`, JSON.stringify(updatedResponses))
+          return updatedResponses
+        } catch (error) {
+          console.error('Error updating responses:', error)
+          return prev
+        }
+      })
     } catch (error) {
       console.error("Error asking AI:", error)
-      
-      const fallbackResponse: AIResponse = {
-        id: uuidv4(),
-        text: "I couldn't analyze the events due to a technical issue. Please try again later.",
-        timestamp: Date.now(),
-      }
-      
-      setResponses((prev) => [...prev, fallbackResponse])
     } finally {
       setIsLoading(false)
     }
@@ -275,17 +306,13 @@ export default function SessionPage({ params }: SessionPageProps) {
 
   // Filter events based on current filters
   const filteredEvents = events.filter(event => {
-    if (selectedPlayer && event.player !== selectedPlayer) return false
-    if (selectedEventType && event.type !== selectedEventType) return false
-    if (timeFilter !== "all") {
-      const eventTime = event.timestamp
-      const sessionTime = Date.now() - sessionStart
-      if (timeFilter === "first-half" && eventTime > sessionTime / 2) return false
-      if (timeFilter === "last-10" && eventTime < sessionTime - 600000) return false
-      if (timeFilter === "second-half" && eventTime <= sessionTime / 2) return false
-      if (timeFilter === "last-5" && eventTime < sessionTime - 300000) return false
+    try {
+      if (selectedPlayers.length > 0 && event.player && !selectedPlayers.includes(event.player)) return false
+      return true
+    } catch (error) {
+      console.error('Error filtering event:', error)
+      return true // Include event if there's an error filtering
     }
-    return true
   })
 
   // Don't render anything until sessionId is available
@@ -374,12 +401,8 @@ export default function SessionPage({ params }: SessionPageProps) {
         <div className="w-2/4 bg-white/5 backdrop-blur-sm border-r border-white/20">
           <EventTimeline 
             events={filteredEvents}
-            selectedPlayer={selectedPlayer}
-            setSelectedPlayer={setSelectedPlayer}
-            selectedEventType={selectedEventType}
-            setSelectedEventType={setSelectedEventType}
-            timeFilter={timeFilter}
-            setTimeFilter={setTimeFilter}
+            selectedPlayer={selectedPlayers}
+            setSelectedPlayer={setSelectedPlayers}
             sessionStart={sessionStart}
           />
         </div>
@@ -415,17 +438,26 @@ function SessionTimer({ startTime }: { startTime: number }) {
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startTime) / 1000))
-    }, 1000)
+    try {
+      const interval = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startTime) / 1000))
+      }, 1000)
 
-    return () => clearInterval(interval)
+      return () => clearInterval(interval)
+    } catch (error) {
+      console.error('Error in SessionTimer useEffect:', error)
+    }
   }, [startTime])
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+    try {
+      const mins = Math.floor(seconds / 60)
+      const secs = seconds % 60
+      return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+    } catch (error) {
+      console.error('Error formatting time in SessionTimer:', error)
+      return "00:00"
+    }
   }
 
   return <span className="font-mono">{formatTime(elapsed)}</span>

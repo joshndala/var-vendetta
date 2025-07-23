@@ -105,6 +105,9 @@ export async function getEvents(sessionId: string): Promise<Array<{
   text: string;
   timestamp: Date;
   tags: string[];
+  players: string[] | any[];
+  eventType: string;
+  analysisConfidence: number;
   sessionId: string;
 }>> {
   try {

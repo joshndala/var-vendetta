@@ -41,7 +41,7 @@ export default function EventLogger({
       // Also call frontend callback for immediate UI update with backend response
       onEventLogged({
         notes: notes.trim(),
-        timestamp: Date.now() - sessionStart,
+        timestamp: Date.now(),
         backendResponse: logResponse
       })
 

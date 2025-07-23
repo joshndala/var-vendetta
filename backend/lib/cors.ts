@@ -25,8 +25,18 @@ export function runMiddleware(
 // CORS middleware handler
 export function withCors(handler: NextApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
+    // Get allowed origins from environment variable or use default
+    const allowedOrigins = process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',') 
+      : ['http://localhost:3000', 'https://your-frontend-domain.vercel.app'];
+    
+    const origin = req.headers.origin;
+    const isAllowedOrigin = allowedOrigins.includes('*') || (origin && allowedOrigins.includes(origin));
+    
     // Set CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (isAllowedOrigin) {
+      res.setHeader('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader(
       'Access-Control-Allow-Headers',

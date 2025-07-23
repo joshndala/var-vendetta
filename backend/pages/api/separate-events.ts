@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withCors } from '../../lib/cors';
 import { CohereClient } from 'cohere-ai';
+import { supabase } from '../../lib/supabase';
+import { sanitizeError, safeLog } from '../../lib/env-validation';
 
 interface SeparatedEvent {
   text: string;
@@ -25,9 +27,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 
   try {
-    const { text, sport = 'general' } = req.body;
+    const { text, sport = 'general', sessionId } = req.body;
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'Text is required' });
+    }
+
+    // Fetch players for this session if sessionId is provided
+    let availablePlayers: string[] = [];
+    if (sessionId) {
+      try {
+        const { data: sessionPlayers } = await supabase
+          .from('players')
+          .select('name, number')
+          .eq('session_id', sessionId);
+        
+        if (sessionPlayers && sessionPlayers.length > 0) {
+          availablePlayers = sessionPlayers.map(p => 
+            p.number ? `${p.name} (#${p.number})` : p.name
+          );
+        }
+      } catch (playerError) {
+        console.error('Error fetching players:', playerError);
+      }
     }
 
     // Sport-specific event types
@@ -42,9 +63,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const availableEvents = sportEvents[sport as keyof typeof sportEvents] || sportEvents.general;
 
+    // Build the system prompt with available players if any
+    let playerContext = '';
+    if (availablePlayers.length > 0) {
+      playerContext = `\n\nAvailable players in this session: ${availablePlayers.join(', ')}\nIMPORTANT: Only use player names from this list. If a player is mentioned by number only, try to match it to the available players.`;
+    }
+
     const systemPrompt = `You are a sports event separator. Your job is to break down a sports log entry into separate individual events.
 
-Available event types: ${availableEvents.join(', ')}
+Available event types: ${availableEvents.join(', ')}${playerContext}
 
 CRITICAL: You MUST separate the input text into multiple events if it contains multiple actions or players.
 
@@ -57,7 +84,8 @@ Rules:
 6. Look for punctuation marks like "!", ".", "and", "then", "but" that indicate separate events
 7. Even if sentences are connected with commas, separate them if they describe different actions
 8. Pay attention to context - if one action enables another, they are separate events
-9. Return a JSON array of objects with this structure:
+9. For player names: ${availablePlayers.length > 0 ? 'Only use names from the available players list. If someone is mentioned by number, try to match it to a player with that number.' : 'Extract player names mentioned in the text.'}
+10. Return a JSON array of objects with this structure:
    [
      {
        "text": "description of this specific event",
@@ -99,38 +127,18 @@ Output: [
   {
     "text": "then passed to Sarah",
     "tags": ["pass"],
-    "players": ["Mike", "Sarah"],
+    "players": ["Mike"],
     "eventType": "player",
     "confidence": 0.9
   },
   {
-    "text": "who scored",
+    "text": "Sarah scored",
     "tags": ["goal"],
     "players": ["Sarah"],
     "eventType": "player",
     "confidence": 0.9
   }
-]
-
-Input: "John dribbled past two defenders and scored a beautiful goal"
-Output: [
-  {
-    "text": "John dribbled past two defenders",
-    "tags": ["dribble"],
-    "players": ["John"],
-    "eventType": "player",
-    "confidence": 0.9
-  },
-  {
-    "text": "scored a beautiful goal",
-    "tags": ["goal"],
-    "players": ["John"],
-    "eventType": "player",
-    "confidence": 0.9
-  }
-]
-
-REMEMBER: If the input contains multiple actions or players, you MUST separate them into different events.`;
+]`;
 
     const userPrompt = `Log entry: ${text}`;
 
@@ -145,7 +153,7 @@ REMEMBER: If the input contains multiple actions or players, you MUST separate t
     let separatedEvents: SeparatedEvent[] = [];
     try {
       const content = aiResponse.text || '';
-      console.log('AI Response:', content);
+      safeLog('AI Response received successfully');
       
       // Clean up the response - remove markdown code blocks if present
       let cleanContent = content.trim();
@@ -160,8 +168,8 @@ REMEMBER: If the input contains multiple actions or players, you MUST separate t
         throw new Error('Not an array');
       }
     } catch (err) {
-      console.error('Failed to parse separated events:', err);
-      console.error('Raw AI response:', aiResponse.text);
+      console.error('Failed to parse separated events:', sanitizeError(err));
+      console.error('Raw AI response length:', aiResponse.text?.length || 0);
       // Fallback: treat as single event
       separatedEvents = [{
         text: text,
@@ -183,9 +191,9 @@ REMEMBER: If the input contains multiple actions or players, you MUST separate t
 
     res.status(200).json({ events: separatedEvents });
   } catch (error) {
-    console.error('Error in separate-events endpoint:', error);
+    console.error('Error in separate-events endpoint:', sanitizeError(error));
     res.status(500).json({ error: 'Event separation error.' });
   }
 }
 
-export default withCors(handler); 
+export default withCors(handler);
