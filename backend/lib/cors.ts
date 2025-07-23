@@ -25,27 +25,46 @@ export function runMiddleware(
 // CORS middleware handler
 export function withCors(handler: NextApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
-    // Get allowed origins from environment variable or use default
-    const allowedOrigins = process.env.CORS_ORIGIN 
-      ? process.env.CORS_ORIGIN.split(',') 
-      : ['http://localhost:3000', 'https://your-frontend-domain.vercel.app'];
+    // Get allowed origins from environment variable
+    const corsOrigin = process.env.CORS_ORIGIN;
+    if (!corsOrigin) {
+      console.error('CORS_ORIGIN environment variable is not set');
+      return res.status(500).json({ error: 'CORS configuration error' });
+    }
+    
+    const allowedOrigins: string[] = corsOrigin.split(',').map(origin => origin.trim());
     
     const origin = req.headers.origin;
-    const isAllowedOrigin = allowedOrigins.includes('*') || (origin && allowedOrigins.includes(origin));
+    
+    // Debug logging (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('CORS Debug:', {
+        corsOrigin,
+        allowedOrigins,
+        requestOrigin: origin,
+        method: req.method
+      });
+    }
+    
+    // Check if origin is allowed
+    const isAllowedOrigin = allowedOrigins.includes('*') || 
+                           (origin && allowedOrigins.includes(origin));
     
     // Set CORS headers
-    if (isAllowedOrigin) {
-      res.setHeader('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+    if (isAllowedOrigin && origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    } else if (isAllowedOrigin) {
+      res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0]);
     }
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'X-Requested-With, Content-Type, Accept, Authorization'
-    );
+    
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-    // Handle OPTIONS method
+    // Handle OPTIONS method (preflight request)
     if (req.method === 'OPTIONS') {
-      return res.status(200).end();
+      res.status(200).end();
+      return;
     }
 
     // Continue with the actual handler
