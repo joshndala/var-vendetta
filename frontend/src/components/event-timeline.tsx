@@ -206,7 +206,7 @@ export default function EventTimeline({
       console.error('Error getting player from event:', error)
       return null
     }
-  }).filter(Boolean))).sort()
+  }).filter((player): player is string => player !== null && player !== undefined))).sort()
 
   const togglePlayer = (player: string) => {
     try {
