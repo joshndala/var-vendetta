@@ -1,22 +1,27 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withCors } from '../../lib/cors';
 
-function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  res.status(200).json({ 
-    status: 'success',
-    message: 'API is working',
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      '/api/test': 'This endpoint (GET)',
-      '/api/log': 'Log text with timestamp (POST)',
-      '/api/transcribe': 'Placeholder for transcription (POST)',
-      '/api/embed': 'Generate embeddings for text (POST)',
-      '/api/ask-ref': 'Question answering with context (POST)'
-    }
-  });
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    // Simple health check
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Health check failed' 
+    });
+  }
 }
 
 export default withCors(handler); 
