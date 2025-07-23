@@ -1,139 +1,250 @@
-# VAR Vendetta
+# CoachDeck 🏀⚽🎾
 
-VAR Vendetta is a Next.js application that helps record and analyze player decisions in virtual football (e.g. EA FC Pro Clubs). It uses hybrid retrieval methods (BM25 + vector search) to find relevant context from past decisions and generate AI-powered responses to questions.
+CoachDeck is an AI-powered sports coaching assistant that analyzes conversation transcripts from coaching sessions and provides intelligent insights. It uses advanced hybrid retrieval (BM25 + FAISS) and Cohere's AI models to deliver sport-specific coaching analysis.
 
-## Project Structure
+## 🚀 Features
 
-The project is split into two main parts:
+- **Multi-Sport Support**: Basketball, Football, Soccer, Tennis, E-sports, and more
+- **Hybrid Search**: Combines keyword (BM25) and semantic (FAISS) search for optimal results
+- **AI-Powered Analysis**: Sport-specific coaching insights using Cohere's Command-R-Plus
+- **Smart Tagging**: Automatic tagging of coaching moments with sport-relevant labels
+- **Real-time Processing**: Instant analysis of coaching sessions
+- **Vector Embeddings**: 1024-dimensional embeddings for superior semantic understanding
+- **Reranking**: Advanced result reranking for more relevant context selection
 
-- **Backend**: Next.js API routes with TypeScript, Prisma, FAISS and BM25 for retrieval
-- **Frontend**: Next.js client application with React and TypeScript
+## 🏗️ Architecture
 
-## Requirements
+### **Backend Stack**
+- **Framework**: Next.js API routes with TypeScript
+- **Database**: Supabase (PostgreSQL) with JSONB support
+- **Vector Search**: FAISS for in-memory similarity search
+- **AI Services**: Cohere (embeddings, reranking, LLM)
+- **Search**: BM25 for keyword-based retrieval
 
-- Node.js 16+ and npm/yarn
-- HuggingFace API key (for embeddings)
-- OpenRouter API key (for AI responses)
+### **Frontend Stack**
+- **Framework**: Next.js 14 with React and TypeScript
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **State Management**: React hooks and context
+- **Real-time**: Web Speech API for transcription
 
-## Getting Started
+## 📋 Requirements
 
-### Backend Setup
+- Node.js 18+ and npm/yarn
+- Cohere API key
+- Supabase account and project
 
-1. Navigate to the backend directory:
+## 🛠️ Getting Started
+
+### **Backend Setup**
+
+1. **Navigate to backend directory:**
    ```bash
    cd backend
    ```
 
-2. Install dependencies:
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. Create a `.env` file based on `.env.example`:
+3. **Set up environment variables:**
    ```bash
    cp .env.example .env
    ```
 
-4. Add your API keys to the `.env` file:
-   ```
-   HF_API_TOKEN=your_huggingface_api_token_here
-   OPENROUTER_API_KEY=your_openrouter_api_key_here
+4. **Configure your `.env` file:**
+   ```bash
+   # Supabase Configuration
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   
+   # Cohere AI Services
+   COHERE_API_KEY=your_cohere_api_key
+   
+   # App Configuration
+   NEXT_PUBLIC_APP_URL=http://localhost:3001
    ```
 
-5. Initialize the database:
+5. **Initialize Supabase database:**
    ```bash
-   npx prisma db push
+   # From project root
+   cd ../supabase
+   supabase start
+   supabase db reset
    ```
 
-6. Start the development server:
+6. **Start the development server:**
    ```bash
+   cd ../backend
    npm run dev
    ```
 
-The backend server will be available at http://localhost:3000.
+The backend server will be available at **http://localhost:3001**
 
-### Frontend Setup
+### **Frontend Setup**
 
-1. Navigate to the frontend directory:
+1. **Navigate to frontend directory:**
    ```bash
    cd frontend
    ```
 
-2. Install dependencies:
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. Create a `.env.local` file based on `.env.example`:
+3. **Configure environment:**
    ```bash
    cp .env.example .env.local
    ```
 
-4. Adjust the API URL in `.env.local` if needed:
-   ```
-   NEXT_PUBLIC_API_URL=http://localhost:3000
+4. **Update API URL in `.env.local`:**
+   ```bash
+   NEXT_PUBLIC_API_URL=http://localhost:3001
    ```
 
-5. Start the development server:
+5. **Start the development server:**
    ```bash
    npm run dev
    ```
 
-The frontend will be available at http://localhost:3001.
+The frontend will be available at **http://localhost:3000**
 
-## API Endpoints
+## 🔌 API Endpoints
 
-### `/api/log`
-- **Method**: POST
-- **Description**: Log text with timestamp
-- **Body**:
-  ```json
-  {
-    "text": "This is a sample transcript to be logged.",
-    "timestamp": "2023-10-10T12:00:00.000Z"
-  }
-  ```
+### **Core Endpoints**
 
-### `/api/embed`
-- **Method**: POST
-- **Description**: Generate embeddings for text
-- **Body**:
-  ```json
-  {
-    "text": "This is a sample text to generate embeddings for."
-  }
-  ```
+#### `POST /api/log`
+Log coaching session transcripts with sport-specific context.
 
-### `/api/ask-ref`
-- **Method**: POST
-- **Description**: Question answering with context
-- **Body**:
-  ```json
-  {
-    "question": "What was discussed about APIs?"
-  }
-  ```
-
-### `/api/transcribe` (Placeholder)
-- **Method**: POST
-- **Description**: Placeholder for transcription (currently handled by frontend)
-
-## Testing with Postman
-
-A Postman collection is available in the backend directory for testing the API endpoints:
-
-```
-backend/var-vendetta-api.postman_collection.json
+**Request Body:**
+```json
+{
+  "text": "Player made an amazing dunk over the defender",
+  "timestamp": "2025-07-23T03:25:00Z",
+  "sport": "basketball"
+}
 ```
 
-Import this collection into Postman to test the API endpoints.
+**Response:**
+```json
+{
+  "id": "73a1c8c1-bb75-48f9-b51d-514648bbd8cb",
+  "text": "Player made an amazing dunk over the defender",
+  "timestamp": "2025-07-23T03:25:00.000Z"
+}
+```
 
-## Features
+#### `POST /api/ask-ref`
+Get AI-powered coaching analysis with hybrid search and reranking.
 
-- Real-time speech-to-text transcription using the Web Speech API
-- Logging of transcriptions to a database with timestamps
-- Vector search using FAISS for semantic similarity
-- Keyword search using BM25 for text retrieval
-- Hybrid search combining both approaches
-- AI-powered responses to questions using context from past transcriptions
-- CORS middleware for cross-origin requests
+**Request Body:**
+```json
+{
+  "question": "How did the player perform defensively?"
+}
+```
+
+**Response:**
+```json
+{
+  "answer": "Based on the provided transcripts, the player demonstrated excellent defensive positioning...",
+  "sources": [
+    {
+      "id": "snippet-id",
+      "text": "Player showed excellent defensive positioning and blocked three shots",
+      "score": 1.0,
+      "source": "hybrid"
+    }
+  ]
+}
+```
+
+#### `POST /api/embed`
+Generate 1024-dimensional embeddings using Cohere's embed-english-v3.0 model.
+
+**Request Body:**
+```json
+{
+  "text": "Player executed a perfect pick and roll"
+}
+```
+
+**Response:**
+```json
+{
+  "embeddings": [0.02684021, 0.00630188, ...]
+}
+```
+
+#### `POST /api/tag-log`
+Automatically tag coaching moments with sport-relevant labels.
+
+**Request Body:**
+```json
+{
+  "text": "Player made an amazing dunk over the defender"
+}
+```
+
+**Response:**
+```json
+{
+  "tags": ["clutch", "dunk"]
+}
+```
+
+## 🏀 Supported Sports
+
+CoachDeck supports multiple sports with specialized analysis:
+
+### **Basketball**
+- **Tags**: shot, pass, rebound, defense, fast_break, pick_and_roll, three_pointer, layup, dunk, free_throw, assist, steal, block, turnover, foul, timeout, substitution
+- **Analysis Focus**: Shooting accuracy, ball movement, defensive positioning, rebounding, transition play
+
+### **Football/Soccer**
+- **Tags**: goal, assist, pass, shot, tackle, save, foul, yellow_card, red_card, penalty, corner, free_kick
+- **Analysis Focus**: Passing accuracy, defensive positioning, tactical awareness, set-piece execution
+
+### **Tennis**
+- **Tags**: ace, serve, volley, forehand, backhand, smash, drop_shot, lob, fault, double_fault, break_point
+- **Analysis Focus**: Serve consistency, shot selection, court positioning, mental game
+
+### **E-sports**
+- **Tags**: kill, assist, objective, rotation, positioning, communication, strategy, clutch
+- **Analysis Focus**: Team coordination, strategic decision-making, mechanical skills
+
+## 🔍 Search & Retrieval
+
+### **Hybrid Search Architecture**
+1. **BM25 Search**: Keyword-based retrieval for exact matches
+2. **FAISS Search**: Semantic similarity using 1024-dimensional embeddings
+3. **Cohere Rerank**: Advanced reranking for optimal result relevance
+4. **Result Fusion**: Weighted combination of search methods
+
+### **Vector Search Details**
+- **Model**: Cohere embed-english-v3.0
+- **Dimensions**: 1024 (vs 384 in previous models)
+- **Index**: FAISS IndexFlatL2 for fast similarity search
+- **Storage**: Supabase JSONB for persistence
+
+## 🧠 AI Analysis Pipeline
+
+### **Processing Flow**
+1. **Input**: User question about coaching session
+2. **Search**: Hybrid BM25 + FAISS retrieval
+3. **Rerank**: Cohere rerank-english-v3.0 for relevance
+4. **Context**: Top 3 reranked results with tags
+5. **Analysis**: Cohere command-r-plus with sport-specific prompts
+6. **Output**: Detailed coaching analysis and recommendations
+
+### **Sport-Specific Prompts**
+Each sport has customized AI prompts that focus on:
+- Sport-specific terminology and concepts
+- Relevant performance metrics
+- Appropriate coaching language
+- Contextual analysis patterns
+
+## 📄 License
+
+This project is licensed under the MIT License.

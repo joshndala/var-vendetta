@@ -17,6 +17,8 @@ interface LogResponse {
   id: string;
   text: string;
   timestamp: Date;
+  tags?: string[];
+  sessionId?: string;
 }
 
 interface EmbeddingResponse {
@@ -38,11 +40,13 @@ interface AskRefResponse {
 /**
  * Log a new transcript/mistake to the backend
  */
-export async function logTranscript(text: string, timestamp: Date): Promise<LogResponse> {
+export async function logTranscript(text: string, timestamp: Date, sport?: string, sessionId?: string): Promise<LogResponse> {
   try {
     const response = await api.post<LogResponse>('/api/log', {
       text,
       timestamp: timestamp.toISOString(),
+      sport,
+      sessionId,
     });
 
     return response.data;
@@ -89,6 +93,70 @@ export async function logMistake(mistake: Mistake): Promise<LogResponse> {
     );
   } catch (error) {
     console.error('Error logging mistake:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get events for a session from the database
+ */
+export async function getEvents(sessionId: string): Promise<Array<{
+  id: string;
+  text: string;
+  timestamp: Date;
+  tags: string[];
+  sessionId: string;
+}>> {
+  try {
+    const response = await api.get(`/api/get-events?sessionId=${sessionId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a new session
+ */
+export async function createSession(sport: string): Promise<{ success: boolean; sessionId: string }> {
+  try {
+    const response = await api.post('/api/create-session', { sport });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating session:', error);
+    throw error;
+  }
+}
+
+/**
+ * Add players to a session
+ */
+export async function addPlayers(sessionId: string, players: Array<{ name: string; number?: string }>): Promise<any[]> {
+  try {
+    const response = await api.post(`/api/players?sessionId=${sessionId}`, { players });
+    return response.data;
+  } catch (error) {
+    console.error('Error adding players:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get session information including sport
+ */
+export async function getSession(sessionId: string): Promise<{
+  id: string;
+  title: string;
+  sport: string;
+  created_at: string;
+  ended_at?: string;
+}> {
+  try {
+    const response = await api.get(`/api/get-session?sessionId=${sessionId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching session:', error);
     throw error;
   }
 }

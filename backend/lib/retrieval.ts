@@ -1,7 +1,7 @@
 import { SearchResult, Snippet } from '../types';
 import { searchDocuments } from './bm25';
 import { searchSimilarEmbeddings } from './faiss';
-import prisma from './prisma';
+import { supabase } from './supabase';
 
 // Constants for weighting the different search methods
 const BM25_WEIGHT = 0.6;
@@ -51,13 +51,15 @@ async function mergeResults(
   }
 
   // Fetch all snippets in one database query
-  const snippets = await prisma.snippet.findMany({
-    where: {
-      id: {
-        in: Array.from(snippetIds)
-      }
-    }
-  });
+  const { data: snippets, error } = await supabase
+    .from('snippets')
+    .select('*')
+    .in('id', Array.from(snippetIds));
+  
+  if (error) {
+    console.error('Error fetching snippets:', error);
+    return [];
+  }
 
   // Create a map for quick lookup
   const snippetMap = new Map<string, Snippet>();

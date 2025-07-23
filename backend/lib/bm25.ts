@@ -1,5 +1,5 @@
 import { Snippet } from '../types';
-import prisma from './prisma';
+import { supabase } from './supabase';
 
 // Dynamically import wink-bm25-text-search (CommonJS module)
 const initializeBM25 = async () => {
@@ -76,23 +76,29 @@ async function loadDocumentsFromDb(): Promise<void> {
   try {
     // Check if the Snippet table exists by trying a count operation first
     try {
-      await prisma.snippet.count();
-    } catch (error: any) {
-      if (error.code === 'P2021') {
-        // Table doesn't exist yet, which is fine for a new database
+      const { count, error } = await supabase
+        .from('snippets')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
         console.log('Snippet table does not exist yet. This is normal for a new database.');
         return;
       }
-      // If it's another type of error, re-throw it
-      throw error;
+    } catch (error: any) {
+      console.log('Snippet table does not exist yet. This is normal for a new database.');
+      return;
     }
     
     // If we got here, the table exists, so we can proceed to fetch snippets
-    const snippets = await prisma.snippet.findMany({
-      orderBy: {
-        startTime: 'asc'
-      }
-    });
+    const { data: snippets, error } = await supabase
+      .from('snippets')
+      .select('*')
+      .order('start_time', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching snippets:', error);
+      return;
+    }
     
     console.log(`Loading ${snippets.length} documents into BM25 index`);
     

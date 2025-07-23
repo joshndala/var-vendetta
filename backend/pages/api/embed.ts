@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { EmbeddingRequest, EmbeddingResponse } from '../../types';
-import axios from 'axios';
 import { withCors } from '../../lib/cors';
+import { CohereClient } from 'cohere-ai';
 
 async function handler(
   req: NextApiRequest,
@@ -11,11 +11,16 @@ async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Check if HuggingFace API token exists
-  const hfApiToken = process.env.HF_API_TOKEN;
-  if (!hfApiToken) {
-    return res.status(500).json({ error: 'HuggingFace API token is not set' });
+  // Check if Cohere API key exists
+  const cohereApiKey = process.env.COHERE_API_KEY;
+  if (!cohereApiKey) {
+    return res.status(500).json({ error: 'Cohere API key is not set' });
   }
+
+  // Initialize Cohere client
+  const cohere = new CohereClient({
+    token: cohereApiKey,
+  });
 
   try {
     const { text } = req.body as EmbeddingRequest;
@@ -25,32 +30,23 @@ async function handler(
     }
     
     try {
-      // Directly call the HF feature-extraction pipeline as suggested
-      const hfUrl = 
-        'https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2';
+      // Call Cohere's embed API
+      const response = await cohere.embed({
+        texts: [text],
+        model: 'embed-english-v3.0',
+        inputType: 'search_document'
+      });
 
-      // Send the text as the raw request body
-      const hfRes = await axios.post<number[][]>(
-        hfUrl,
-        text,
-        {
-          headers: {
-            Authorization: `Bearer ${hfApiToken}`,
-            'Content-Type': 'text/plain',   // plain text is fine here
-          },
-        }
-      );
-
-      // HF returns an array of embeddings per input; we passed one string so take [0]
-      const embeddings = hfRes.data[0];
+      // Cohere returns embeddings in the response
+      const embeddings = (response.embeddings as any)[0] || [];
 
       return res.status(200).json({ embeddings });
     } catch (apiError) {
-      console.error('Error calling HuggingFace API:', apiError);
+      console.error('Error calling Cohere API:', apiError);
       
       // Fallback to mock embeddings for testing purposes
       console.warn('Falling back to mock embeddings');
-      const mockEmbeddings = Array.from({ length: 384 }, () => Math.random() * 2 - 1);
+      const mockEmbeddings = Array.from({ length: 1024 }, () => Math.random() * 2 - 1); // Cohere v3 uses 1024 dimensions
       
       return res.status(200).json({
         embeddings: mockEmbeddings
@@ -60,7 +56,7 @@ async function handler(
     console.error('Error in embedding endpoint:', error);
     
     // Generate mock embeddings even on error for testing purposes
-    const mockEmbeddings = Array.from({ length: 384 }, () => Math.random() * 2 - 1);
+    const mockEmbeddings = Array.from({ length: 1024 }, () => Math.random() * 2 - 1);
     
     return res.status(200).json({
       embeddings: mockEmbeddings

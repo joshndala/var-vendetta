@@ -8,59 +8,51 @@ interface StartScreenProps {
 
 export default function StartScreen({ onStartSession }: StartScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background scanlines">
-      <div className="w-full max-w-md p-8 space-y-8 bg-card rounded border border-primary/20 shadow-lg relative overflow-hidden">
-        {/* Red top edge like a VAR screen */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-primary"></div>
+    <div 
+      className="flex flex-col items-center justify-center min-h-screen relative overflow-hidden"
+      style={{
+        backgroundImage: `url('home/background-img.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Enhanced overlay for better text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/50"></div>
+      
+      {/* Main content */}
+      <div className="relative z-10 text-center px-6 max-w-2xl mx-auto">
+        {/* Logo/Title */}
+        <h1 className="text-6xl md:text-8xl font-bold text-white mb-6 tracking-tight drop-shadow-2xl">
+          CoachDeck
+        </h1>
         
-        <div className="text-center">
-          <h1 
-            className="text-5xl font-bold text-primary glow-red tracking-tighter mb-2"
-            data-text="VAR VENDETTA"
-          >
-            VAR VENDETTA
-          </h1>
-          <p className="mt-2 text-muted-foreground terminal-text">Track player mistakes during matches</p>
-        </div>
-
-        {/* Animated referee stripes - moving left to right */}
-        <div className="bg-muted h-10 flex items-center justify-center rounded overflow-hidden">
-          <div className="w-full h-6 referee-stripes-scroll-right"></div>
-        </div>
-
-        <div className="relative py-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border"></div>
-          </div>
-          <div className="relative flex justify-center">
-            <span className="px-3 text-xs text-accent terminal-text bg-card flicker">SYSTEM READY</span>
-          </div>
-        </div>
-
+        {/* Tagline */}
+        <p className="text-xl md:text-2xl text-white/90 mb-12 font-light leading-relaxed drop-shadow-lg">
+          Track, review, and improve your team's performance in real time.
+        </p>
+        
+        {/* CTA Button */}
         <Button 
           onClick={onStartSession} 
-          className="w-full py-6 text-lg bg-primary hover:bg-primary/90 border border-primary/20 shadow-[0_0_15px_rgba(255,0,0,0.3)]"
+          className="px-12 py-6 text-lg md:text-xl font-semibold bg-[#a965e2] hover:bg-[#a965e2]/90 text-white border-0 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          style={{
+            boxShadow: '0 10px 30px rgba(169, 101, 226, 0.3)'
+          }}
         >
-          INITIALIZE SESSION
+          Start New Session
         </Button>
-
-        {/* Bottom referee stripes - moving right to left */}
-        <div className="pt-4 opacity-80">
-          <div className="flex w-full overflow-hidden">
-            <div className="h-1.5 w-full referee-stripes-scroll-left"></div>
-          </div>
-        </div>
         
-        {/* Bottom decorative elements */}
-        <div className="absolute bottom-2 left-4 right-4 flex justify-between items-center text-xs terminal-text text-muted-foreground">
-          <div>VAR.SYS v1.0.0</div>
-          <div className="flex space-x-2">
-            <div className="h-2 w-2 rounded-full bg-accent animate-pulse"></div>
-            <div className="h-2 w-2 rounded-full bg-secondary"></div>
-            <div className="h-2 w-2 rounded-full bg-primary"></div>
-          </div>
-        </div>
+        {/* Bottom tagline */}
+        <p className="text-white/70 mt-12 text-sm md:text-base font-medium drop-shadow-md">
+          Built for coaches who see everything — and want to remember it.
+        </p>
       </div>
+      
+      {/* Subtle animated elements */}
+      <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-[#a965e2] rounded-full animate-pulse opacity-60"></div>
+      <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-[#a965e2] rounded-full animate-pulse opacity-40"></div>
+      <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-[#a965e2] rounded-full animate-pulse opacity-50"></div>
     </div>
   )
 }

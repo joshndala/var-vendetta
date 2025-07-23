@@ -1,10 +1,10 @@
 import { IndexFlatL2 } from 'faiss-node';
 import { Snippet } from '../types';
-import prisma from './prisma';
+import { supabase } from './supabase';
 
 // Define the dimensionality based on the embedding model used
-// all-MiniLM-L6-v2 model produces 384-dimensional embeddings
-const EMBEDDING_DIMENSION = 384;
+// Cohere embed-english-v3.0 model produces 1024-dimensional embeddings
+const EMBEDDING_DIMENSION = 1024;
 
 let faissIndex: IndexFlatL2 | null = null;
 const snippetMap: Map<number, string> = new Map(); // Map FAISS IDs to Snippet IDs
@@ -37,25 +37,29 @@ async function loadEmbeddingsFromDb(): Promise<void> {
   try {
     // Check if the Snippet table exists by trying a count operation first
     try {
-      await prisma.snippet.count();
-    } catch (error) {
-      if (error.code === 'P2021') {
-        // Table doesn't exist yet, which is fine for a new database
+      const { count, error } = await supabase
+        .from('snippets')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
         console.log('Snippet table does not exist yet. This is normal for a new database.');
         return;
       }
-      // If it's another type of error, re-throw it
-      throw error;
+    } catch (error) {
+      console.log('Snippet table does not exist yet. This is normal for a new database.');
+      return;
     }
     
     // Get all snippets with embeddings
-    const snippets = await prisma.snippet.findMany({
-      where: {
-        embeddings: {
-          not: null
-        }
-      }
-    });
+    const { data: snippets, error } = await supabase
+      .from('snippets')
+      .select('*')
+      .not('embeddings', 'is', null);
+    
+    if (error) {
+      console.error('Error fetching snippets with embeddings:', error);
+      return;
+    }
     
     console.log(`Loading ${snippets.length} embeddings from database`);
     
@@ -63,8 +67,8 @@ async function loadEmbeddingsFromDb(): Promise<void> {
       const snippet = snippets[i];
       if (snippet.embeddings) {
         try {
-          // Parse embeddings from JSON string
-          const embeddings = JSON.parse(snippet.embeddings) as number[];
+          // Embeddings are already JSONB arrays, no need to parse
+          const embeddings = snippet.embeddings as number[];
           
           // Validate embedding dimensions
           if (embeddings.length !== EMBEDDING_DIMENSION) {
@@ -77,7 +81,7 @@ async function loadEmbeddingsFromDb(): Promise<void> {
           faissIndex.add(embeddings);
           snippetMap.set(currentIndex, snippet.id);
         } catch (parseError) {
-          console.error(`Error parsing embeddings for snippet ${snippet.id}:`, parseError);
+          console.error(`Error processing embeddings for snippet ${snippet.id}:`, parseError);
         }
       }
     }
@@ -108,10 +112,15 @@ export async function addEmbedding(snippetId: string, embedding: number[]): Prom
       snippetMap.set(newIndex, snippetId);
       
       // Store the embedding in the database
-      await prisma.snippet.update({
-        where: { id: snippetId },
-        data: { embeddings: JSON.stringify(embedding) }
-      });
+      const { error } = await supabase
+        .from('snippets')
+        .update({ embeddings: embedding })
+        .eq('id', snippetId);
+      
+      if (error) {
+        console.error('Error storing embedding in database:', error);
+        return false;
+      }
       
       return true;
     }

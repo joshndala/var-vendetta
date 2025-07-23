@@ -1,3 +1,18 @@
+export interface Player {
+  id: string;
+  sessionId: string;
+  name: string;
+  number?: string;
+  createdAt: Date;
+}
+
+export interface PlayerMatch {
+  playerId: string;
+  playerName: string;
+  confidence: number;
+  role: 'primary' | 'secondary' | 'involved';
+}
+
 export interface Session {
   id: string;
   createdAt: Date;
@@ -30,6 +45,9 @@ export interface Snippet {
   startTime: Date;
   endTime: Date;
   embeddings?: number[];
+  players?: PlayerMatch[];
+  eventType?: 'player' | 'team' | 'observation' | 'opponent';
+  analysisConfidence?: number;
 }
 
 export interface SearchResult {
@@ -67,6 +85,11 @@ export interface LogResponse {
   id: string;
   text: string;
   timestamp: Date;
+  tags?: string[];
+  sessionId?: string;
+  players?: PlayerMatch[];
+  eventType?: 'player' | 'team' | 'observation' | 'opponent';
+  analysisConfidence?: number;
 }
 
 export interface AskRefRequest {
