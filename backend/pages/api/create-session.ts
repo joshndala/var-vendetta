@@ -1,6 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withCors } from '../../lib/cors';
 import { supabase } from '../../lib/supabase';
+import getRawBody from 'raw-body';
+
+export const config = {
+  api: {
+    bodyParser: false, // we are disabling Next.js body parsing
+  },
+};
 
 async function handler(
   req: NextApiRequest,
@@ -11,12 +18,12 @@ async function handler(
   }
 
   try {
-    const { sport = 'general' } = req.body;
-    
-    // Generate a unique session ID
+    const rawBody = await getRawBody(req);
+    const parsedBody = JSON.parse(rawBody.toString());
+    const { sport = 'general' } = parsedBody;
+
     const sessionId = crypto.randomUUID();
 
-    // Create new session with the generated ID
     const { data: newSession, error: createError } = await supabase
       .from('sessions')
       .insert({
@@ -39,10 +46,4 @@ async function handler(
   }
 }
 
-export default withCors(handler); 
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export default withCors(handler);
