@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { withCors } from '../../lib/cors';
 
 async function handler(
   req: NextApiRequest,
@@ -25,4 +26,4 @@ async function handler(
   }
 }
 
-export default handler; 
+export default withCors(handler); 
