@@ -33,21 +33,25 @@ export function withCors(handler: NextApiHandler) {
 
     const allowedOrigins = corsOrigin.split(',').map(o => o.trim());
     const origin = req.headers.origin || '';
+
     const isAllowedOrigin =
-      allowedOrigins.includes('*') || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app');
+      allowedOrigins.includes('*') ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app'); // optional
+
+    console.log('Incoming origin:', origin);
+    console.log('Allowed origins:', allowedOrigins);
+    console.log('Is allowed:', isAllowedOrigin);
 
     if (!isAllowedOrigin) {
-      console.warn(`Blocked CORS request from disallowed origin: ${origin}`);
       return res.status(403).json({ error: 'Origin not allowed by CORS' });
     }
 
-    // ✅ Set headers for all responses, including preflight
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-    // ✅ Respond to preflight OPTIONS requests immediately
     if (req.method === 'OPTIONS') {
       res.status(200).end();
       return;
