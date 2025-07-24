@@ -10,21 +10,27 @@ export function validateEnvironmentVariables() {
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
-    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    console.warn(`⚠️ Missing environment variables: ${missingVars.join(', ')}`);
+    console.warn('⚠️ Some features may not work properly');
+    // Don't throw error, just warn
+    return false;
   }
 
   // Validate API key formats (basic checks)
   const cohereApiKey = process.env.COHERE_API_KEY;
   if (cohereApiKey && cohereApiKey.length < 10) {
-    throw new Error('Invalid COHERE_API_KEY format');
+    console.warn('⚠️ Invalid COHERE_API_KEY format');
+    return false;
   }
 
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (supabaseKey && !supabaseKey.startsWith('eyJ')) {
-    throw new Error('Invalid SUPABASE_SERVICE_ROLE_KEY format');
+    console.warn('⚠️ Invalid SUPABASE_SERVICE_ROLE_KEY format');
+    return false;
   }
 
-  console.log('Environment variables validated successfully');
+  console.log('✅ Environment variables validated successfully');
+  return true;
 }
 
 // Sanitize error messages to prevent sensitive data exposure

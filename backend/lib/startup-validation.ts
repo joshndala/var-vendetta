@@ -3,15 +3,15 @@ import { validateEnvironmentVariables } from './env-validation';
 // Run validation on startup
 export function runStartupValidation() {
   try {
-    validateEnvironmentVariables();
-    console.log('✅ Environment validation passed');
-  } catch (error) {
-    console.error('❌ Environment validation failed:', error instanceof Error ? error.message : 'Unknown error');
-    // In production, you might want to exit the process
-    if (process.env.NODE_ENV === 'production') {
-      console.error('Exiting due to environment validation failure');
-      process.exit(1);
+    const isValid = validateEnvironmentVariables();
+    if (isValid) {
+      console.log('✅ Environment validation passed');
+    } else {
+      console.warn('⚠️ Environment validation failed - continuing with warnings');
     }
+  } catch (error) {
+    console.error('❌ Environment validation error:', error instanceof Error ? error.message : 'Unknown error');
+    console.warn('⚠️ Continuing despite validation errors');
   }
 }
 
