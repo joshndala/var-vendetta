@@ -51,11 +51,12 @@ export function withCors(handler: NextApiHandler) {
                            (origin && allowedOrigins.includes(origin));
     
     // Set CORS headers
-    if (isAllowedOrigin && origin) {
+    if (origin && isAllowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
-    } else if (isAllowedOrigin) {
-      res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0]);
-    }
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else {
+      return res.status(403).json({ error: 'Origin not allowed by CORS' });
+    }    
     
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
