@@ -1,21 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
-import './startup-validation';
+// import { runStartupValidation } from './startup-validation';
+
+// Temporarily disable startup validation to debug 502 error
+// runStartupValidation();
 
 // For local development, use the local Supabase instance
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing required Supabase environment variables');
+  throw new Error('Missing Supabase environment variables');
 }
 
 // Create Supabase client with service role key for backend operations
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Database initialization function
 async function initializeDatabase() {

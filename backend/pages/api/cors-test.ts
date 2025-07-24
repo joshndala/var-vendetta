@@ -1,28 +1,25 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withCors } from '../../lib/cors';
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const corsOrigin = process.env.CORS_ORIGIN;
+  const allowedOrigins = corsOrigin ? corsOrigin.split(',').map(o => o.trim()) : [];
+  const origin = req.headers.origin || '';
 
-  try {
-    res.status(200).json({ 
-      status: 'CORS test successful',
-      timestamp: new Date().toISOString(),
-      corsOrigin: process.env.CORS_ORIGIN,
-      requestOrigin: req.headers.origin,
-      method: req.method
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      status: 'error', 
-      message: 'CORS test failed' 
-    });
-  }
+  return res.status(200).json({
+    message: 'CORS test successful',
+    corsOrigin,
+    allowedOrigins,
+    incomingOrigin: origin,
+    isAllowed: allowedOrigins.includes('*') || allowedOrigins.includes(origin),
+    method: req.method,
+    headers: {
+      'access-control-allow-origin': res.getHeader('Access-Control-Allow-Origin'),
+      'access-control-allow-methods': res.getHeader('Access-Control-Allow-Methods'),
+      'access-control-allow-headers': res.getHeader('Access-Control-Allow-Headers'),
+      'access-control-allow-credentials': res.getHeader('Access-Control-Allow-Credentials'),
+    }
+  });
 }
 
 export default withCors(handler); 
