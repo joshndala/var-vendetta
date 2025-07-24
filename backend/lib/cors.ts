@@ -50,22 +50,28 @@ export function withCors(handler: NextApiHandler) {
     const isAllowedOrigin = allowedOrigins.includes('*') || 
                            (origin && allowedOrigins.includes(origin));
     
-    // Set CORS headers
+    // Set CORS headers for non-OPTIONS requests
     if (origin && isAllowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
     } else {
       return res.status(403).json({ error: 'Origin not allowed by CORS' });
-    }    
-    
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
 
     // Handle OPTIONS method (preflight request)
     if (req.method === 'OPTIONS') {
-      res.status(200).end();
-      return;
+      if (origin && isAllowedOrigin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.status(200).end();
+        return;
+      } else {
+        return res.status(403).json({ error: 'Origin not allowed by CORS' });
+      }
     }
 
     // Continue with the actual handler
