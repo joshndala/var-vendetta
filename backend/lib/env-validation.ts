@@ -2,7 +2,7 @@
 
 export function validateEnvironmentVariables() {
   const requiredVars = [
-    'NEXT_PUBLIC_SUPABASE_URL',
+    'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
     'COHERE_API_KEY'
   ];
