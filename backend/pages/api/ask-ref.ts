@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { AskRefRequest, AskRefResponse, SearchResult } from '../../types';
 import { hybridSearch } from '../../lib/retrieval';
-import axios from 'axios';
+import { generateEmbeddings } from '../../lib/embeddings';
 import { withCors } from '../../lib/cors';
 import { supabase } from '../../lib/supabase';
 import { getSportConfig, getPromptForSport } from '../../lib/sport-config';
@@ -37,12 +37,7 @@ async function handler(
     
           // Get embeddings for the question
       try {
-        const embedResponse = await axios.post(
-          '/api/embed',
-          { text: question },
-          { headers: { 'Content-Type': 'application/json' } }
-        );
-        const embeddings = embedResponse.data.embeddings;
+        const embeddings = await generateEmbeddings(question);
       
       // Perform hybrid search to retrieve relevant context
       const searchResults = await hybridSearch(question, embeddings, 5);

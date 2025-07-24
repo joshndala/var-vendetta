@@ -5,7 +5,8 @@ import { addDocument } from '../../lib/bm25';
 import { withCors } from '../../lib/cors';
 import { getTagsForSport } from '../../lib/sport-config';
 import { PlayerDetectionService } from '../../lib/player-detection';
-import axios from 'axios';
+import { separateEvents } from '../../lib/event-separation';
+import { generateEmbeddings } from '../../lib/embeddings';
 import { sanitizeError, safeLog } from '../../lib/env-validation';
 
 // This is a stub implementation
@@ -110,12 +111,7 @@ async function handler(
     // Separate events and get tags for each
     let separatedEvents: any[] = [];
     try {
-      const separateRes = await axios.post(
-        '/api/separate-events',
-        { text, sport, sessionId },
-        { headers: { 'Content-Type': 'application/json' } }
-      );
-      separatedEvents = separateRes.data.events || [];
+      separatedEvents = await separateEvents(text, sport, sessionId);
     } catch (separateError) {
       console.error('Error separating events:', separateError);
       // Fallback: treat as single event
@@ -192,24 +188,18 @@ async function handler(
       
       // Generate and store embeddings for FAISS search
       try {
-        const embedResponse = await axios.post(
-          '/api/embed',
-          { text: event.text },
-          { headers: { 'Content-Type': 'application/json' } }
-        );
+        const embeddings = await generateEmbeddings(event.text);
         
-        if (embedResponse.data.embeddings) {
-          // Update snippet with embeddings
-          const { error: updateError } = await supabase
-            .from('snippets')
-            .update({ embeddings: embedResponse.data.embeddings })
-            .eq('id', snippet.id);
-          
-          if (updateError) {
-            console.error('Error storing embeddings:', updateError);
-          } else {
-            safeLog('Embeddings stored successfully for snippet ID:', { id: snippet.id });
-          }
+        // Update snippet with embeddings
+        const { error: updateError } = await supabase
+          .from('snippets')
+          .update({ embeddings: embeddings })
+          .eq('id', snippet.id);
+        
+        if (updateError) {
+          console.error('Error storing embeddings:', updateError);
+        } else {
+          safeLog('Embeddings stored successfully for snippet ID:', { id: snippet.id });
         }
       } catch (embedError) {
         console.error('Error generating embeddings:', embedError);
