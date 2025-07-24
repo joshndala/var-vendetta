@@ -9,5 +9,4 @@ restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
 [deploy.envs]
-NODE_ENV = "production"
-PORT = "3001" 
+NODE_ENV = "production" 
