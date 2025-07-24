@@ -1,3 +1,8 @@
+providers = ["node"]
+
+[phases.setup]
+nixPkgs = ["nodejs-18_x"]
+
 [phases.install]
 cmds = ["cd backend && npm ci"]
 
@@ -5,4 +10,4 @@ cmds = ["cd backend && npm ci"]
 cmds = ["cd backend && npm run build"]
 
 [start]
-cmd = "cd backend && npm run start"
+cmd = "cd backend && npm start"
