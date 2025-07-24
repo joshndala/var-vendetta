@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
+    "@vercel/speed-insights": "^1.2.0",
     "axios": "^1.4.0",
     "cohere-ai": "^7.17.1",
     "faiss-node": "^0.5.1",
