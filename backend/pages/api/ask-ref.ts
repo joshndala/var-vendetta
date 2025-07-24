@@ -38,7 +38,7 @@ async function handler(
           // Get embeddings for the question
       try {
         const embedResponse = await axios.post(
-          'http://localhost:3001/api/embed',
+          '/api/embed',
           { text: question },
           { headers: { 'Content-Type': 'application/json' } }
         );

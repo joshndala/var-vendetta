@@ -111,7 +111,7 @@ async function handler(
     let separatedEvents: any[] = [];
     try {
       const separateRes = await axios.post(
-        'http://localhost:3001/api/separate-events',
+        '/api/separate-events',
         { text, sport, sessionId },
         { headers: { 'Content-Type': 'application/json' } }
       );
@@ -193,7 +193,7 @@ async function handler(
       // Generate and store embeddings for FAISS search
       try {
         const embedResponse = await axios.post(
-          'http://localhost:3001/api/embed',
+          '/api/embed',
           { text: event.text },
           { headers: { 'Content-Type': 'application/json' } }
         );
