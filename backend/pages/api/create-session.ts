@@ -40,3 +40,9 @@ async function handler(
 }
 
 export default withCors(handler); 
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
