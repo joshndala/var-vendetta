@@ -235,12 +235,13 @@ export default function SessionPage({ params }: SessionPageProps) {
 
   return (
     <div 
-      className="flex flex-col h-screen relative overflow-hidden"
+      className="flex flex-col min-h-screen lg:h-screen relative"
       style={{
         backgroundImage: `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-color="%23240046" stop-opacity="0.8"/><stop offset="100%" stop-color="%23000000" stop-opacity="0.9"/></radialGradient></defs><rect width="100%" height="100%" fill="url(%23a)"/><circle cx="960" cy="540" r="500" fill="%23a965e2" opacity="0.05"/><circle cx="960" cy="540" r="300" fill="%23a965e2" opacity="0.03"/></svg>')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundRepeat: 'no-repeat',
+        minHeight: 'calc(var(--vh, 1vh) * 100)'
       }}
     >
       {/* Subtle overlay */}
@@ -285,7 +286,7 @@ export default function SessionPage({ params }: SessionPageProps) {
       </header>
 
       {/* Main content - Responsive layout */}
-      <div className="flex flex-1 overflow-hidden relative z-10">
+      <div className="flex flex-1 lg:overflow-hidden relative z-10">
         {/* Desktop Layout (hidden on mobile) */}
         <div className="hidden lg:flex w-full">
           {/* Left Panel - Event Logger */}
@@ -323,7 +324,7 @@ export default function SessionPage({ params }: SessionPageProps) {
         {/* Mobile Layout */}
         <div className="lg:hidden flex flex-col w-full">
           {/* Main content area */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1">
             {/* Event Timeline (default view) */}
             {activeView === 'timeline' && (
               <div className="h-full bg-white/5 backdrop-blur-sm">
