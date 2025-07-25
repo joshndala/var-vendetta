@@ -179,6 +179,7 @@ export async function getSession(sessionId: string): Promise<{
   title: string;
   sport: string;
   created_at: string;
+  start_time: string;
   ended_at?: string;
 }> {
   try {

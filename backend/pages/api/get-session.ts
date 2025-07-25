@@ -7,6 +7,7 @@ interface Session {
   title: string;
   sport: string;
   created_at: string;
+  start_time: string;
   ended_at?: string;
 }
 
@@ -28,7 +29,7 @@ async function handler(
     // Fetch session information
     const { data: session, error } = await supabase
       .from('sessions')
-      .select('id, title, sport, created_at, ended_at')
+      .select('id, title, sport, created_at, start_time, ended_at')
       .eq('id', sessionId)
       .single();
 

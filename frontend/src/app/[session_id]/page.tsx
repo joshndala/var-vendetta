@@ -64,6 +64,11 @@ export default function SessionPage({ params }: SessionPageProps) {
         const sessionInfo = await getSession(sessionId)
         setSelectedSport(sessionInfo.sport)
         localStorage.setItem(`coachDeck_sport_${sessionId}`, sessionInfo.sport)
+        
+        // Set session start time from database
+        const startTime = new Date(sessionInfo.start_time).getTime()
+        setSessionStart(startTime)
+        localStorage.setItem(`coachDeck_session_start_${sessionId}`, startTime.toString())
       } catch (error) {
         console.error("Error loading session info:", error)
         // Fallback to localStorage if backend fails
@@ -73,6 +78,12 @@ export default function SessionPage({ params }: SessionPageProps) {
         } else {
           // Final fallback to general sport
           setSelectedSport("general")
+        }
+        
+        // Fallback to localStorage for session start time
+        const storedSessionStart = localStorage.getItem(`coachDeck_session_start_${sessionId}`)
+        if (storedSessionStart) {
+          setSessionStart(parseInt(storedSessionStart))
         }
       }
 
@@ -85,12 +96,6 @@ export default function SessionPage({ params }: SessionPageProps) {
         } catch (error) {
           console.error("Error parsing stored players:", error)
         }
-      }
-
-      // Load session start time
-      const storedSessionStart = localStorage.getItem(`coachDeck_session_start_${sessionId}`)
-      if (storedSessionStart) {
-        setSessionStart(parseInt(storedSessionStart))
       }
 
       // Load responses from localStorage

@@ -29,7 +29,8 @@ async function handler(
       .insert({
         id: sessionId,
         title: `CoachDeck Session ${new Date().toISOString().slice(0, 10)}`,
-        sport: sport
+        sport: sport,
+        start_time: new Date().toISOString()
       })
       .select()
       .single();
