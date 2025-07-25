@@ -11,6 +11,7 @@ import ApiStatus from "@/components/api-status"
 
 import { Button } from "@/components/ui/button"
 import { askQuestion, getEvents, getSession } from "@/lib/api"
+import { Plus, MessageSquare, Clock, X } from "lucide-react"
 
 const AVAILABLE_SPORTS = [
   { name: 'basketball', displayName: 'Basketball' },
@@ -38,6 +39,11 @@ export default function SessionPage({ params }: SessionPageProps) {
   const [players, setPlayers] = useState<Player[]>([])
   const [selectedSport, setSelectedSport] = useState<string>("")
   const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  // Mobile-specific state
+  const [activeView, setActiveView] = useState<'timeline' | 'ai' | 'logger'>('timeline')
+  const [showEventLogger, setShowEventLogger] = useState(false)
+  const [showAIAssistant, setShowAIAssistant] = useState(false)
   
   // Await params in useEffect
   useEffect(() => {
@@ -102,18 +108,7 @@ export default function SessionPage({ params }: SessionPageProps) {
     }
 
     initializeSession()
-  }, [sessionId]) // Removed sessionStart from dependencies to prevent infinite loop
-
-  // Auto-refresh events every 5 seconds (optional - you can remove this if you prefer manual refresh only)
-  // useEffect(() => {
-  //   if (!sessionId) return
-  //   
-  //   const interval = setInterval(() => {
-  //     loadEventsFromBackend()
-  //   }, 5000)
-  //   
-  //   return () => clearInterval(interval)
-  // }, [sessionId])
+  }, [sessionId])
 
   const loadEventsFromBackend = async () => {
     if (!sessionId) return
@@ -122,107 +117,23 @@ export default function SessionPage({ params }: SessionPageProps) {
     try {
       const backendEvents = await getEvents(sessionId)
       
-      // Convert backend events to frontend format
-      const convertedEvents = backendEvents.map((event: any) => {
-        try {
-          console.log('Processing event:', event); // Debug log
-          
-          // Extract player name from players array or use first player if available
-          let playerName = "Unknown"
-          
-          // Handle different event types
-          if (event.eventType === 'team') {
-            playerName = "Team"
-            console.log('Team event detected, setting player to Team'); // Debug log
-          } else if (event.eventType === 'opponent') {
-            playerName = "Opposition"
-          } else if (event.players && event.players.length > 0) {
-            // If players is an array of strings, use the first one
-            if (typeof event.players[0] === 'string') {
-              playerName = event.players[0]
-            }
-            // If players is an array of objects, use the name property
-            else if (event.players[0] && typeof event.players[0] === 'object' && event.players[0].name) {
-              playerName = event.players[0].name
-            }
-          }
-          
-          console.log('Final player name:', playerName); // Debug log
-          
-          // Map event type from backend to frontend format
-          let eventType = "Other"
-          if (event.eventType) {
-            // Map backend event types to frontend event types
-            const typeMapping: { [key: string]: string } = {
-              'goal': 'Goal',
-              'assist': 'Assist',
-              'pass': 'Pass',
-              'shot': 'Shot Off Target',
-              'save': 'Save',
-              'foul': 'Foul',
-              'tackle': 'Tackle',
-              'interception': 'Interception',
-              'corner': 'Corner',
-              'free_kick': 'Free Kick',
-              'penalty': 'Penalty',
-              'substitution': 'Substitution',
-              'injury': 'Injury',
-              'tactical_change': 'Tactical Change',
-              'formation_change': 'Formation Change',
-              'time_out': 'Time Out',
-              'team': 'Team Event',
-              'opponent': 'Opponent Event',
-              'observation': 'Other'
-            }
-            eventType = typeMapping[event.eventType] || 'Other'
-          }
-          
-          // Ensure timestamp is valid
-          let timestamp = Date.now()
-          if (event.timestamp) {
-            try {
-              timestamp = new Date(event.timestamp).getTime()
-              if (isNaN(timestamp)) {
-                console.warn('Invalid timestamp, using current time:', event.timestamp)
-                timestamp = Date.now()
-              }
-            } catch (error) {
-              console.warn('Error parsing timestamp, using current time:', error)
-              timestamp = Date.now()
-            }
-          }
-          
-          return {
-            id: event.id || `event-${Date.now()}-${Math.random()}`,
-            player: playerName,
-            type: eventType,
-            notes: event.text || "",
-            timestamp: timestamp,
-            tags: event.tags || [],
-            backendResponse: event
-          }
-        } catch (error) {
-          console.error('Error processing event:', error, event)
-          // Return a fallback event
-          return {
-            id: `error-event-${Date.now()}-${Math.random()}`,
-            player: "Unknown",
-            type: "Other",
-            notes: event.text || "Error processing event",
-            timestamp: Date.now(),
-            tags: [],
-            backendResponse: event
-          }
-        }
-      })
+      // Convert backend events to frontend Mistake format
+      const convertedEvents: Mistake[] = backendEvents.map(event => ({
+        id: event.id,
+        timestamp: new Date(event.timestamp).getTime(),
+        player: event.players?.[0]?.name || event.players?.[0] || "Unknown",
+        type: event.eventType,
+        notes: event.text,
+        tags: event.tags || []
+      }))
       
       setEvents(convertedEvents)
       
-      // Save to localStorage
+      // Save to localStorage as backup
       localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(convertedEvents))
     } catch (error) {
       console.error("Error loading events from backend:", error)
-      // Fallback to localStorage if backend fails
+      // Fallback to localStorage
       const storedEvents = localStorage.getItem(`coachDeck_events_${sessionId}`)
       if (storedEvents) {
         try {
@@ -238,75 +149,73 @@ export default function SessionPage({ params }: SessionPageProps) {
 
   const addEvent = (event: { notes: string; timestamp: number; backendResponse?: any }) => {
     try {
-      const newEvent = {
+      const newEvent: Mistake = {
         id: uuidv4(),
-        player: "Unknown",
-        type: "Other",
         notes: event.notes,
         timestamp: event.timestamp,
         tags: [],
-        backendResponse: event.backendResponse
+        type: "Other"
       }
-      
+
+      // Add to state
       setEvents(prev => {
-        try {
-          const updatedEvents = [newEvent, ...prev]
-          // Save to localStorage with the updated events
-          localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(updatedEvents))
-          return updatedEvents
-        } catch (error) {
-          console.error('Error updating events:', error)
-          return prev
-        }
+        const updated = [newEvent, ...prev]
+        // Save to localStorage
+        localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(updated))
+        return updated
       })
-      
-      // Refresh events from backend after a delay to get the separated events
-      setTimeout(() => {
-        loadEventsFromBackend()
-      }, 2000)
+
+      // Switch to timeline view on mobile after adding event
+      setActiveView('timeline')
+      setShowEventLogger(false)
     } catch (error) {
       console.error('Error adding event:', error)
     }
   }
 
   const askAI = async (question: string) => {
-    if (!sessionId) return
-    
+    if (!question.trim() || isLoading) return
+
     setIsLoading(true)
     try {
       const response = await askQuestion(question)
+      
       const newResponse: AIResponse = {
         id: uuidv4(),
         text: response.answer,
         timestamp: Date.now()
       }
-      
+
       setResponses(prev => {
-        try {
-          const updatedResponses = [newResponse, ...prev]
-          // Save to localStorage
-          localStorage.setItem(`coachDeck_responses_${sessionId}`, JSON.stringify(updatedResponses))
-          return updatedResponses
-        } catch (error) {
-          console.error('Error updating responses:', error)
-          return prev
-        }
+        const updated = [newResponse, ...prev]
+        localStorage.setItem(`coachDeck_responses_${sessionId}`, JSON.stringify(updated))
+        return updated
       })
     } catch (error) {
-      console.error("Error asking AI:", error)
+      console.error('Error asking AI:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
   const endSession = () => {
-    // Navigate back to home page
-    router.push("/")
+    try {
+      // Save final state
+      localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(events))
+      localStorage.setItem(`coachDeck_responses_${sessionId}`, JSON.stringify(responses))
+      
+      // Navigate back to start screen
+      router.push('/')
+    } catch (error) {
+      console.error('Error ending session:', error)
+      router.push('/')
+    }
   }
 
-  // Filter events based on current filters
+  // Filter events based on selected players
   const filteredEvents = events.filter(event => {
     try {
+      if (selectedPlayers.length === 0) return true
       if (selectedPlayers.length > 0 && event.player && !selectedPlayers.includes(event.player)) return false
       return true
     } catch (error) {
@@ -337,90 +246,186 @@ export default function SessionPage({ params }: SessionPageProps) {
       {/* Subtle overlay */}
       <div className="absolute inset-0 bg-black/10"></div>
       
-      {/* Header */}
+      {/* Mobile Header */}
       <header className="relative z-10 bg-white/10 backdrop-blur-sm border-b border-white/20 shadow-lg">
-        <div className="container mx-auto flex justify-between items-center p-4">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+        <div className="flex justify-between items-center p-4">
+          {/* Left side - App name and timer */}
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-white tracking-tight">
               CoachDeck
             </h1>
-            <div className="ml-4 px-3 py-1 text-sm text-white/80 bg-white/10 rounded-lg border border-white/20 font-medium">
-              Session: {sessionId}
-            </div>
-            <div className="ml-2 px-3 py-1 text-sm text-[#a965e2] bg-[#a965e2]/10 rounded-lg border border-[#a965e2]/20 font-medium">
-              {AVAILABLE_SPORTS.find(s => s.name === selectedSport)?.displayName || 'Basketball'}
+            <div className="flex items-center gap-2 text-white/80">
+              <Clock className="w-4 h-4" />
+              <SessionTimer startTime={sessionStart} />
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          {/* Right side - Recording indicator and refresh */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              <span className="text-xs text-white/70 hidden sm:block">Recording</span>
+            </div>
             <Button
               onClick={loadEventsFromBackend}
               disabled={isRefreshing}
-              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2"
+              size="sm"
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
             >
               {isRefreshing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Refreshing...
-                </>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Refresh Events
-                </>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
               )}
-            </Button>
-            <div className="text-white bg-white/10 px-4 py-2 rounded-lg border border-white/20 font-mono text-lg">
-              <SessionTimer startTime={sessionStart} />
-            </div>
-            <Button
-              onClick={endSession}
-              className="bg-red-600 hover:bg-red-700 text-white border-0 px-6 py-2 rounded-lg font-semibold transition-all duration-200"
-            >
-              End Session
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main content - Three panels */}
+      {/* Main content - Responsive layout */}
       <div className="flex flex-1 overflow-hidden relative z-10">
-        {/* Left Panel - Event Logger */}
-        <div className="w-1/4 bg-white/5 backdrop-blur-sm border-r border-white/20">
-          <EventLogger 
-            sessionStart={sessionStart}
-            sport={selectedSport}
-            sessionId={sessionId}
-            onEventLogged={addEvent}
-          />
+        {/* Desktop Layout (hidden on mobile) */}
+        <div className="hidden lg:flex w-full">
+          {/* Left Panel - Event Logger */}
+          <div className="w-1/4 bg-white/5 backdrop-blur-sm border-r border-white/20">
+            <EventLogger 
+              sessionStart={sessionStart}
+              sport={selectedSport}
+              sessionId={sessionId}
+              onEventLogged={addEvent}
+            />
+          </div>
+
+          {/* Center Panel - Event Timeline */}
+          <div className="w-2/4 bg-white/5 backdrop-blur-sm border-r border-white/20">
+            <EventTimeline 
+              events={filteredEvents}
+              selectedPlayer={selectedPlayers}
+              setSelectedPlayer={setSelectedPlayers}
+              sessionStart={sessionStart}
+            />
+          </div>
+
+          {/* Right Panel - AI Assistant */}
+          <div className="w-1/4 bg-white/5 backdrop-blur-sm">
+            <AIAssistant 
+              responses={responses} 
+              onAskAI={askAI}
+              isLoading={isLoading}
+              setResponses={setResponses}
+              events={events}
+            />
+          </div>
         </div>
 
-        {/* Center Panel - Event Timeline */}
-        <div className="w-2/4 bg-white/5 backdrop-blur-sm border-r border-white/20">
-          <EventTimeline 
-            events={filteredEvents}
-            selectedPlayer={selectedPlayers}
-            setSelectedPlayer={setSelectedPlayers}
-            sessionStart={sessionStart}
-          />
-        </div>
+        {/* Mobile Layout */}
+        <div className="lg:hidden flex flex-col w-full">
+          {/* Main content area */}
+          <div className="flex-1 overflow-hidden">
+            {/* Event Timeline (default view) */}
+            {activeView === 'timeline' && (
+              <div className="h-full bg-white/5 backdrop-blur-sm">
+                <EventTimeline 
+                  events={filteredEvents}
+                  selectedPlayer={selectedPlayers}
+                  setSelectedPlayer={setSelectedPlayers}
+                  sessionStart={sessionStart}
+                />
+              </div>
+            )}
 
-        {/* Right Panel - AI Assistant */}
-        <div className="w-1/4 bg-white/5 backdrop-blur-sm">
-          <AIAssistant 
-            responses={responses} 
-            onAskAI={askAI}
-            isLoading={isLoading}
-            setResponses={setResponses}
-            events={events}
-          />
+            {/* AI Assistant (collapsible) */}
+            {activeView === 'ai' && (
+              <div className="h-full bg-white/5 backdrop-blur-sm">
+                <AIAssistant 
+                  responses={responses} 
+                  onAskAI={askAI}
+                  isLoading={isLoading}
+                  setResponses={setResponses}
+                  events={events}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="relative z-10 bg-white/5 backdrop-blur-sm border-t border-white/20 p-3">
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden relative z-10 bg-white/10 backdrop-blur-sm border-t border-white/20">
+        <div className="flex justify-around items-center p-3">
+          {/* New Event Button */}
+          <button
+            onClick={() => setShowEventLogger(true)}
+            className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors"
+          >
+            <div className="w-8 h-8 bg-[#a965e2] rounded-full flex items-center justify-center">
+              <Plus className="w-4 h-4" />
+            </div>
+            <span className="text-xs">New Event</span>
+          </button>
+
+          {/* Timeline Button */}
+          <button
+            onClick={() => setActiveView('timeline')}
+            className={`flex flex-col items-center gap-1 transition-colors ${
+              activeView === 'timeline' ? 'text-[#a965e2]' : 'text-white/80 hover:text-white'
+            }`}
+          >
+            <Clock className="w-6 h-6" />
+            <span className="text-xs">Timeline</span>
+          </button>
+
+          {/* AI Chat Button */}
+          <button
+            onClick={() => setActiveView('ai')}
+            className={`flex flex-col items-center gap-1 transition-colors ${
+              activeView === 'ai' ? 'text-[#a965e2]' : 'text-white/80 hover:text-white'
+            }`}
+          >
+            <MessageSquare className="w-6 h-6" />
+            <span className="text-xs">AI Chat</span>
+          </button>
+
+          {/* End Session Button */}
+          <button
+            onClick={endSession}
+            className="flex flex-col items-center gap-1 text-red-400 hover:text-red-300 transition-colors"
+          >
+            <X className="w-6 h-6" />
+            <span className="text-xs">End</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Event Logger Modal */}
+      {showEventLogger && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
+          <div className="absolute bottom-0 left-0 right-0 bg-white/10 backdrop-blur-sm border-t border-white/20 rounded-t-2xl">
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-white">Log New Event</h3>
+                <button
+                  onClick={() => setShowEventLogger(false)}
+                  className="text-white/70 hover:text-white"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <EventLogger 
+                sessionStart={sessionStart}
+                sport={selectedSport}
+                sessionId={sessionId}
+                onEventLogged={addEvent}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Footer */}
+      <footer className="hidden lg:block relative z-10 bg-white/5 backdrop-blur-sm border-t border-white/20 p-3">
         <div className="flex justify-between items-center px-4 text-sm text-white/70">
           <div className="font-medium">CoachDeck v1.0</div>
           <ApiStatus apiUrl={process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"} />
@@ -460,5 +465,5 @@ function SessionTimer({ startTime }: { startTime: number }) {
     }
   }
 
-  return <span className="font-mono">{formatTime(elapsed)}</span>
+  return <span className="font-mono text-sm">{formatTime(elapsed)}</span>
 } 

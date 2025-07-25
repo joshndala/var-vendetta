@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Bot, User } from "lucide-react"
+import { Send, Bot, User, Sparkles } from "lucide-react"
 
 interface AIResponse {
   id: string
@@ -99,12 +99,28 @@ export default function AIAssistant({
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {allMessages.length === 0 ? (
-          <div className="text-center text-white/50 mt-8">
-            <Bot className="w-12 h-12 mx-auto mb-4 text-white/30" />
-            <p className="mb-2">Ask me anything about the session</p>
-            <p className="text-sm">I can analyze performance, patterns, and provide insights</p>
+          <div className="flex flex-col items-center justify-center h-full text-white/50">
+            <Sparkles className="w-12 h-12 mb-4 text-[#a965e2]/50" />
+            <p className="text-lg font-medium mb-2">Ready to help!</p>
+            <p className="text-sm text-center mb-6">
+              Ask me anything about the session or try a suggested question below
+            </p>
+            
+            {/* Suggested Questions */}
+            <div className="w-full space-y-2">
+              <p className="text-xs text-white/60 mb-3">Suggested questions:</p>
+              {SUGGESTED_QUESTIONS.map((suggestedQuestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSuggestedQuestion(suggestedQuestion)}
+                  className="w-full p-3 text-left bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-colors text-sm text-white/80 hover:text-white"
+                >
+                  {suggestedQuestion}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           allMessages.map((message, index) => (
@@ -113,43 +129,35 @@ export default function AIAssistant({
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] p-3 rounded-lg ${
+                className={`max-w-[80%] p-3 rounded-lg ${
                   message.type === 'user'
                     ? 'bg-[#a965e2] text-white'
                     : 'bg-white/10 text-white border border-white/20'
                 }`}
               >
-                <div className="flex items-start space-x-2">
+                <div className="flex items-start gap-2">
                   {message.type === 'ai' && (
-                    <Bot className="w-4 h-4 mt-0.5 text-[#a965e2] flex-shrink-0" />
+                    <Bot className="w-4 h-4 text-[#a965e2] mt-0.5 flex-shrink-0" />
                   )}
-                  <div className="flex-1">
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    <p className="text-xs opacity-50 mt-1">
-                      {new Date(message.timestamp).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </p>
+                  <div className="text-sm leading-relaxed">
+                    {message.content}
                   </div>
-                  {message.type === 'user' && (
-                    <User className="w-4 h-4 mt-0.5 text-white/70 flex-shrink-0" />
-                  )}
                 </div>
               </div>
             </div>
           ))
         )}
 
+        {/* Loading indicator */}
         {isLoading && (
           <div className="flex justify-start">
             <div className="bg-white/10 text-white border border-white/20 rounded-lg p-3">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Bot className="w-4 h-4 text-[#a965e2]" />
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-white/50 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
@@ -157,50 +165,41 @@ export default function AIAssistant({
         )}
       </div>
 
-      {/* Suggested Questions */}
-      {allMessages.length === 0 && (
-        <div className="p-4 border-t border-white/20">
-          <p className="text-sm text-white/70 mb-3">Suggested questions:</p>
-          <div className="grid grid-cols-1 gap-2">
-            {SUGGESTED_QUESTIONS.map((suggestedQuestion, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                size="sm"
-                onClick={() => handleSuggestedQuestion(suggestedQuestion)}
-                className="bg-white/5 border-white/20 text-white hover:bg-white/10 text-left justify-start text-xs h-auto p-2"
-              >
-                {suggestedQuestion}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Input */}
+      {/* Input Area */}
       <div className="p-4 border-t border-white/20">
-        <div className="flex space-x-2">
+        <div className="flex gap-2">
           <Input
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Ask about the session..."
-            className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/50"
+            className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-[#a965e2] focus:ring-[#a965e2]"
             disabled={isLoading}
           />
           <Button
             onClick={handleAskQuestion}
             disabled={!question.trim() || isLoading}
-            className="bg-[#a965e2] hover:bg-[#a965e2]/90 text-white px-3"
+            size="sm"
+            className="bg-[#a965e2] hover:bg-[#a965e2]/80 text-white border-0 px-4"
           >
             <Send className="w-4 h-4" />
           </Button>
         </div>
         
-        {/* Session Stats */}
-        <div className="mt-3 text-xs text-white/50">
-          <p>{events.length} events logged • {responses.length} AI responses</p>
-        </div>
+        {/* Quick Actions */}
+        {allMessages.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {SUGGESTED_QUESTIONS.slice(0, 3).map((suggestedQuestion, index) => (
+              <button
+                key={index}
+                onClick={() => handleSuggestedQuestion(suggestedQuestion)}
+                className="px-3 py-1 text-xs bg-white/10 hover:bg-white/20 rounded-full border border-white/20 text-white/80 hover:text-white transition-colors"
+              >
+                {suggestedQuestion}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

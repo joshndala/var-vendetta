@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Mic, MicOff } from "lucide-react"
+import { Mic, MicOff, Send, Plus } from "lucide-react"
 import { logTranscript } from "@/lib/api"
 
 interface EventLoggerProps {
@@ -69,63 +69,100 @@ export default function EventLogger({
   }
 
   return (
-    <div className="flex flex-col h-full p-4 space-y-4">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-lg font-semibold text-white mb-1">Event Logger</h2>
-        <p className="text-sm text-white/70">Describe events using voice or text</p>
+      <div className="p-4 border-b border-white/20">
+        <div className="flex items-center gap-2 mb-2">
+          <Plus className="w-5 h-5 text-[#a965e2]" />
+          <h2 className="text-lg font-semibold text-white">Log New Event</h2>
+        </div>
+        <p className="text-sm text-white/70">
+          Describe what happened during the session
+        </p>
       </div>
 
-      {/* Notes Input */}
-      <div className="space-y-2 flex-1">
-        <label className="text-sm font-medium text-white">Event Description</label>
-        <Textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Describe what happened or use voice input..."
-          className="bg-white/10 border-white/20 text-white placeholder:text-white/50 resize-none h-full"
-          rows={6}
-        />
+      {/* Main Content */}
+      <div className="flex-1 p-4 space-y-4">
+        {/* Notes Input */}
+        <div className="space-y-2 flex-1">
+          <label className="text-sm font-medium text-white">Event Description</label>
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Describe what happened (e.g., 'Player 7 made a passing error in the 15th minute')..."
+            className="bg-white/10 border-white/20 text-white placeholder:text-white/50 resize-none focus:border-[#a965e2] focus:ring-[#a965e2] min-h-[120px]"
+            rows={4}
+          />
+        </div>
+
+        {/* Quick Templates */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white">Quick Templates</label>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              "Passing Error",
+              "Goal Scored", 
+              "Defensive Mistake",
+              "Great Save",
+              "Foul Committed",
+              "Tactical Change"
+            ].map((template) => (
+              <button
+                key={template}
+                onClick={() => setNotes(prev => prev ? `${prev} ${template}` : template)}
+                className="p-2 text-xs bg-white/5 hover:bg-white/10 rounded-lg border border-white/20 text-white/80 hover:text-white transition-colors"
+              >
+                {template}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col space-y-2 pt-4">
-        <div className="flex gap-2">
-          <Button
-            onClick={toggleRecording}
-            variant={isRecording ? "destructive" : "secondary"}
-            className="flex items-center gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
-          >
-            {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-            {isRecording ? "Stop Recording" : "Voice Input"}
-          </Button>
-          
-          <Button
-            onClick={handleLogEvent}
-            disabled={!notes.trim() || isLogging}
-            className="flex-1 bg-[#a965e2] hover:bg-[#a965e2]/90 text-white font-semibold"
-          >
-            {isLogging ? "Logging..." : "Log Event"}
-          </Button>
-        </div>
+      <div className="p-4 border-t border-white/20 space-y-3">
+        {/* Voice Recording Button */}
+        <Button
+          onClick={toggleRecording}
+          variant="outline"
+          className={`w-full flex items-center justify-center gap-2 transition-all duration-200 ${
+            isRecording 
+              ? 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' 
+              : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+          }`}
+        >
+          {isRecording ? (
+            <>
+              <MicOff className="w-4 h-4" />
+              Stop Recording
+            </>
+          ) : (
+            <>
+              <Mic className="w-4 h-4" />
+              Voice Input
+            </>
+          )}
+        </Button>
 
-        {/* Recording Status */}
-        {isRecording && (
-          <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-            <p className="text-red-200 text-sm font-medium text-center">
-              🎤 Recording... Speak clearly to describe the event
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Quick Stats */}
-      <div className="mt-auto pt-4 border-t border-white/20">
-        <div className="text-center text-sm text-white/70">
-          <p>Session Active</p>
-          <p className="text-xs text-white/50">Ready to log events</p>
-        </div>
+        {/* Log Event Button */}
+        <Button
+          onClick={handleLogEvent}
+          disabled={!notes.trim() || isLogging}
+          className="w-full bg-[#a965e2] hover:bg-[#a965e2]/80 text-white border-0 flex items-center justify-center gap-2"
+        >
+          {isLogging ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              Logging...
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" />
+              Log Event
+            </>
+          )}
+        </Button>
       </div>
     </div>
   )
