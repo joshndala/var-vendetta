@@ -10,7 +10,7 @@ import AIAssistant from "@/components/ai-assistant"
 import ApiStatus from "@/components/api-status"
 
 import { Button } from "@/components/ui/button"
-import { askQuestion, getEvents, getSession } from "@/lib/api"
+import { askQuestion, getEvents, getSession, endSession as endSessionAPI } from "@/lib/api"
 import { Plus, MessageSquare, Clock, X } from "lucide-react"
 
 const AVAILABLE_SPORTS = [
@@ -203,16 +203,26 @@ export default function SessionPage({ params }: SessionPageProps) {
     }
   }
 
-  const endSession = () => {
+  const endSession = async () => {
     try {
-      // Save final state
+      // Save final state to localStorage as backup
       localStorage.setItem(`coachDeck_events_${sessionId}`, JSON.stringify(events))
       localStorage.setItem(`coachDeck_responses_${sessionId}`, JSON.stringify(responses))
+      
+      // Call API to end session and clean up database
+      const success = await endSessionAPI(sessionId)
+      
+      if (success) {
+        console.log('Session ended successfully')
+      } else {
+        console.warn('Failed to end session via API, but continuing...')
+      }
       
       // Navigate back to start screen
       router.push('/')
     } catch (error) {
       console.error('Error ending session:', error)
+      // Still navigate back even if API call fails
       router.push('/')
     }
   }
@@ -253,7 +263,7 @@ export default function SessionPage({ params }: SessionPageProps) {
       <div className="absolute inset-0 bg-black/10"></div>
       
       {/* Mobile Header */}
-      <header className="relative z-10 bg-white/10 backdrop-blur-sm border-b border-white/20 shadow-lg">
+      <header className="lg:hidden relative z-10 bg-white/10 backdrop-blur-sm border-b border-white/20 shadow-lg">
         <div className="flex justify-between items-center p-4">
           {/* Left side - App name and timer */}
           <div className="flex items-center gap-3">
@@ -285,6 +295,67 @@ export default function SessionPage({ params }: SessionPageProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               )}
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Desktop Header */}
+      <header className="hidden lg:block relative z-10 bg-white/10 backdrop-blur-sm border-b border-white/20 shadow-lg">
+        <div className="flex justify-between items-center p-6">
+          {/* Left side - App name, sport, and session info */}
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              CoachDeck
+            </h1>
+            <div className="flex items-center gap-3">
+              <div className="px-3 py-1 text-sm text-[#a965e2] bg-[#a965e2]/10 rounded-lg border border-[#a965e2]/20 font-medium">
+                {AVAILABLE_SPORTS.find(s => s.name === selectedSport)?.displayName || 'General Sports'}
+              </div>
+              <div className="px-3 py-1 text-sm text-white/80 bg-white/10 rounded-lg border border-white/20 font-medium">
+                Session: {sessionId.slice(0, 8)}...
+              </div>
+            </div>
+          </div>
+          
+          {/* Center - Timer */}
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-white/80" />
+            <div className="text-white bg-white/10 px-4 py-2 rounded-lg border border-white/20 font-mono text-lg">
+              <SessionTimer startTime={sessionStart} />
+            </div>
+          </div>
+          
+          {/* Right side - Actions */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-white/70">Recording</span>
+            </div>
+            <Button
+              onClick={loadEventsFromBackend}
+              disabled={isRefreshing}
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2"
+            >
+              {isRefreshing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh Events
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={endSession}
+              className="bg-red-600 hover:bg-red-700 text-white border-0 px-6 py-2 rounded-lg font-semibold transition-all duration-200"
+            >
+              End Session
             </Button>
           </div>
         </div>
