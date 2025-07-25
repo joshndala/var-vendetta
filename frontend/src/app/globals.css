@@ -24,6 +24,11 @@
   --radius: 0.5rem;
 }
 
+/* Mobile viewport height fix */
+:root {
+  --vh: 1vh;
+}
+
 /* Animation keyframes */
 @keyframes pulse {
   0%, 100% {
@@ -57,10 +62,35 @@
 /* Base styles */
 
 /* Base styles */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   background-color: #240046;
   color: #ffffff;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  height: 100%;
+  overflow: hidden;
+  /* Prevent zoom on input focus */
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Mobile-specific styles */
+@media screen and (max-width: 1024px) {
+  body {
+    /* Use dynamic viewport height */
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 }
 
 /* Glass morphism effect */
