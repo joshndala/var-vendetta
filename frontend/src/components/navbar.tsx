@@ -7,6 +7,11 @@ import { Home, Info, HelpCircle } from "lucide-react"
 export default function Navbar() {
   const pathname = usePathname()
 
+  // Don't show navbar on session pages (URLs with session IDs)
+  if (pathname && pathname !== "/" && pathname !== "/about" && pathname !== "/how-to-use") {
+    return null
+  }
+
   const navItems = [
     { href: "/", label: "Home", icon: Home },
     { href: "/about", label: "About", icon: Info },
