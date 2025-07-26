@@ -45,7 +45,7 @@ export default function StartScreen({ onStartSession }: StartScreenProps) {
         
         {/* Bottom tagline */}
         <p className="text-white/70 mt-12 text-sm md:text-base font-medium drop-shadow-md">
-          Built for coaches who see everything — and want to remember it.
+          Built for coaches who want to be better.
         </p>
       </div>
       
