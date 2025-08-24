@@ -1,5 +1,17 @@
 # CoachDeck 🏀⚽🎾
 
+> **⚠️ Service Status: Currently Disabled**  
+> CoachDeck is temporarily disabled as the Supabase instance has been shut down due to inactivity. The frontend has been modified to show a service unavailable message when users try to create sessions.  
+>   
+> **To reactivate the service:**  
+> 1. Restart your Supabase instance  
+> 2. Uncomment the session creation code in `frontend/src/app/page.tsx` (lines 18-20, 25-45, 52-56)  
+> 3. Deploy the updated frontend  
+>   
+> **For users interested in using this service:**  
+> - Contact me on LinkedIn: [https://www.linkedin.com/in/joshua-ndala/](https://www.linkedin.com/in/joshua-ndala/)  
+> - Set it up yourself using this public GitHub repository  
+
 CoachDeck is an AI-powered sports coaching assistant that analyzes conversation transcripts from coaching sessions and provides intelligent insights. It uses advanced hybrid retrieval (BM25 + FAISS) and Cohere's AI models to deliver sport-specific coaching analysis.
 
 ## 🚀 Features

@@ -4,17 +4,25 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import StartScreen from "@/components/start-screen"
 import PlayerSetupModal from "@/components/player-setup-modal"
+import ServiceUnavailableModal from "@/components/service-unavailable-modal"
 import type { Player } from "../../types"
-import { createSession, addPlayers } from "@/lib/api"
+// import { createSession, addPlayers } from "@/lib/api"
 
 export default function Home() {
   const router = useRouter()
   const [showSetup, setShowSetup] = useState(false)
+  const [showServiceUnavailable, setShowServiceUnavailable] = useState(false)
 
   const startSession = () => {
-    setShowSetup(true)
+    // Service temporarily unavailable - show modal instead of opening setup
+    setShowServiceUnavailable(true)
+    
+    // Original session creation code commented out
+    // setShowSetup(true)
   }
 
+  // Original session setup code commented out
+  /*
   const handleSetupComplete = async (players: Player[], sport: string) => {
     try {
       // Create session in backend (backend will generate unique ID)
@@ -40,17 +48,26 @@ export default function Home() {
   const handleSetupCancel = () => {
     setShowSetup(false)
   }
+  */
 
   return (
     <main className="min-h-screen bg-background">
       <StartScreen onStartSession={startSession} />
       
-      {/* Session Setup Modal */}
+      {/* Service Unavailable Modal */}
+      <ServiceUnavailableModal 
+        isOpen={showServiceUnavailable}
+        onClose={() => setShowServiceUnavailable(false)}
+      />
+      
+      {/* Session Setup Modal - commented out */}
+      {/*
       <PlayerSetupModal
         isOpen={showSetup}
         onComplete={handleSetupComplete}
         onCancel={handleSetupCancel}
       />
+      */}
     </main>
   )
 }
