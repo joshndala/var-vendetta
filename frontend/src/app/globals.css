@@ -26,7 +26,7 @@
 
 /* Mobile viewport height fix */
 :root {
-  --vh: 1vh;
+  --vh: 1vh; /* Fallback value */
 }
 
 /* Animation keyframes */
@@ -80,9 +80,9 @@ body {
 /* Mobile-specific styles */
 @media screen and (max-width: 1024px) {
   body {
-    /* Use dynamic viewport height */
-    height: 100vh;
-    height: calc(var(--vh, 1vh) * 100);
+    /* Use dynamic viewport height with fallback */
+    height: 100vh; /* Fallback for browsers that support it */
+    height: calc(var(--vh, 1vh) * 100); /* Dynamic height when available */
   }
   
   /* Prevent zoom on input focus */

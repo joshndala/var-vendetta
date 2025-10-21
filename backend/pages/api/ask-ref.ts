@@ -61,11 +61,12 @@ async function handler(
       }));
       const contextStr = (await Promise.all(context)).join('\n\n');
       
-      // Get sport-specific context from the session
+      // Get sport-specific context and player information from the session
       let sport = 'general';
       let sportConfig = getSportConfig(sport);
+      let playerMappings: string[] = [];
       
-      // Try to get sport from the first search result's session
+      // Try to get sport and players from the first search result's session
       if (searchResults.length > 0) {
         const { data: session } = await supabase
           .from('sessions')
@@ -76,6 +77,18 @@ async function handler(
         if (session?.sport) {
           sport = session.sport;
           sportConfig = getSportConfig(sport);
+        }
+        
+        // Get player information for this session
+        const { data: players } = await supabase
+          .from('players')
+          .select('name, number')
+          .eq('session_id', searchResults[0].sessionId);
+        
+        if (players && players.length > 0) {
+          playerMappings = players.map(p => 
+            p.number ? `${p.name} (#${p.number})` : p.name
+          );
         }
       }
 
@@ -92,7 +105,13 @@ async function handler(
                             ===== SPORT: ${sportConfig.displayName.toUpperCase()} =====
                             ${getPromptForSport(sport)}
 
-                            ===== TAGS =====
+                            ${playerMappings.length > 0 ? `===== PLAYERS =====
+                            Available players in this session:
+                            ${playerMappings.join(', ')}
+
+                            When analyzing player performance, understand that player names and numbers refer to the same person. For example, "John Smith" and "Player #7" are the same person if John Smith is assigned number 7.
+
+                            ` : ''}===== TAGS =====
                             Each log is annotated with tags in parentheses, e.g. (tags: pass, shot, good). Available tags for ${sportConfig.displayName}:
                             ${sportConfig.tags.join(', ')}
 
@@ -137,7 +156,7 @@ async function handler(
       // Generate response using Cohere's command-r-plus
       const aiResponse = await cohere.chat({
         message: `Context from conversation transcripts:\n\n${rerankedContextStr}\n\nQuestion: ${question}`,
-        model: 'command-r-plus',
+        model: 'command-a-03-2025',
         preamble: systemPrompt,
         temperature: 0.4,
         maxTokens: 600
@@ -176,9 +195,10 @@ async function handler(
         }));
         const contextStr = context.join('\n\n');
         
-        // Get sport context for fallback prompt
+        // Get sport context and player information for fallback prompt
         let fallbackSport = 'general';
         let fallbackSportConfig = getSportConfig(fallbackSport);
+        let fallbackPlayerMappings: string[] = [];
         
         if (searchResults.length > 0) {
           const { data: session } = await supabase
@@ -190,6 +210,18 @@ async function handler(
           if (session?.sport) {
             fallbackSport = session.sport;
             fallbackSportConfig = getSportConfig(fallbackSport);
+          }
+          
+          // Get player information for this session
+          const { data: players } = await supabase
+            .from('players')
+            .select('name, number')
+            .eq('session_id', searchResults[0].sessionId);
+          
+          if (players && players.length > 0) {
+            fallbackPlayerMappings = players.map(p => 
+              p.number ? `${p.name} (#${p.number})` : p.name
+            );
           }
         }
         
@@ -205,7 +237,13 @@ async function handler(
                             ===== SPORT: ${fallbackSportConfig.displayName.toUpperCase()} =====
                             ${getPromptForSport(fallbackSport)}
 
-                            ===== TAGS =====
+                            ${fallbackPlayerMappings.length > 0 ? `===== PLAYERS =====
+                            Available players in this session:
+                            ${fallbackPlayerMappings.join(', ')}
+
+                            When analyzing player performance, understand that player names and numbers refer to the same person. For example, "John Smith" and "Player #7" are the same person if John Smith is assigned number 7.
+
+                            ` : ''}===== TAGS =====
                             Each log is annotated with tags in parentheses, e.g. (tags: pass, shot, good). Available tags for ${fallbackSportConfig.displayName}:
                             ${fallbackSportConfig.tags.join(', ')}
 
@@ -250,7 +288,7 @@ async function handler(
         // Generate response using Cohere's command-r-plus (fallback)
         const aiResponse = await cohere.chat({
           message: `Context from conversation transcripts (keyword search only):\n\n${rerankedContextStr}\n\nQuestion: ${question}`,
-          model: 'command-r-plus',
+          model: 'command-a-03-2025',
           preamble: systemPrompt,
           temperature: 0.4,
           maxTokens: 600

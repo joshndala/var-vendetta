@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Send, Bot, User, Sparkles } from "lucide-react"
+import ReactMarkdown from "react-markdown"
 
 interface AIResponse {
   id: string
@@ -139,8 +140,25 @@ export default function AIAssistant({
                   {message.type === 'ai' && (
                     <Bot className="w-4 h-4 text-[#a965e2] mt-0.5 flex-shrink-0" />
                   )}
-                  <div className="text-sm leading-relaxed">
-                    {message.content}
+                  <div className="text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                        strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+                        li: ({ children }) => <li className="text-white/90">{children}</li>,
+                        h1: ({ children }) => <h1 className="text-lg font-bold text-white mb-2">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-base font-bold text-white mb-2">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-sm font-bold text-white mb-1">{children}</h3>,
+                        blockquote: ({ children }) => <blockquote className="border-l-2 border-[#a965e2] pl-3 italic text-white/80">{children}</blockquote>,
+                        code: ({ children }) => <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
+                        pre: ({ children }) => <pre className="bg-white/10 p-2 rounded text-xs overflow-x-auto">{children}</pre>
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
               </div>

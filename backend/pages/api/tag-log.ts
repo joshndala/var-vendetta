@@ -35,7 +35,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const userPrompt = `Transcript: ${text}`;
     const aiResponse = await cohere.chat({
       message: userPrompt,
-      model: 'command-r-plus',
+      model: 'command-r7b-12-2024',
       preamble: systemPrompt,
       temperature: 0.2,
       maxTokens: 60

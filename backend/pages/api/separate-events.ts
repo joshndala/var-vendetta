@@ -144,7 +144,7 @@ Output: [
 
     const aiResponse = await cohere.chat({
       message: userPrompt,
-      model: 'command-r-plus',
+      model: 'command-r7b-12-2024',
       preamble: systemPrompt,
       temperature: 0.1,
       maxTokens: 800

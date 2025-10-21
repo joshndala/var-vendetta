@@ -247,7 +247,7 @@ CoachDeck supports multiple sports with specialized analysis:
 2. **Search**: Hybrid BM25 + FAISS retrieval
 3. **Rerank**: Cohere rerank-english-v3.0 for relevance
 4. **Context**: Top 3 reranked results with tags
-5. **Analysis**: Cohere command-r-plus with sport-specific prompts
+5. **Analysis**: Cohere Command A with sport-specific prompts
 6. **Output**: Detailed coaching analysis and recommendations
 
 ### **Sport-Specific Prompts**

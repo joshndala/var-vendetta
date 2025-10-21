@@ -38,7 +38,6 @@ export default function SessionPage({ params }: SessionPageProps) {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([])
   const [players, setPlayers] = useState<Player[]>([])
   const [selectedSport, setSelectedSport] = useState<string>("")
-  const [isRefreshing, setIsRefreshing] = useState(false)
   
   // Mobile-specific state
   const [activeView, setActiveView] = useState<'timeline' | 'ai' | 'logger'>('timeline')
@@ -54,6 +53,18 @@ export default function SessionPage({ params }: SessionPageProps) {
     getSessionId()
   }, [params])
   
+  // Set up polling for automatic event updates
+  useEffect(() => {
+    if (!sessionId) return
+    
+    // Set up polling interval (10 seconds)
+    const pollInterval = setInterval(() => {
+      loadEventsFromBackend()
+    }, 10000)
+    
+    return () => clearInterval(pollInterval)
+  }, [sessionId])
+
   // Load events from localStorage and backend on mount
   useEffect(() => {
     if (!sessionId) return // Don't run until sessionId is available
@@ -118,7 +129,6 @@ export default function SessionPage({ params }: SessionPageProps) {
   const loadEventsFromBackend = async () => {
     if (!sessionId) return
     
-    setIsRefreshing(true)
     try {
       const backendEvents = await getEvents(sessionId)
       
@@ -126,7 +136,7 @@ export default function SessionPage({ params }: SessionPageProps) {
       const convertedEvents: Mistake[] = backendEvents.map(event => ({
         id: event.id,
         timestamp: new Date(event.timestamp).getTime(),
-        player: event.players?.[0]?.name || event.players?.[0] || "Unknown",
+        player: event.players?.[0]?.playerName || event.players?.[0]?.name || (typeof event.players?.[0] === 'string' ? event.players[0] : "Unknown"),
         type: event.eventType,
         notes: event.text,
         tags: event.tags || []
@@ -147,8 +157,6 @@ export default function SessionPage({ params }: SessionPageProps) {
           console.error("Error parsing stored events:", error)
         }
       }
-    } finally {
-      setIsRefreshing(false)
     }
   }
 
@@ -276,26 +284,12 @@ export default function SessionPage({ params }: SessionPageProps) {
             </div>
           </div>
           
-          {/* Right side - Recording indicator and refresh */}
+          {/* Right side - Recording indicator */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
               <span className="text-xs text-white/70 hidden sm:block">Recording</span>
             </div>
-            <Button
-              onClick={loadEventsFromBackend}
-              disabled={isRefreshing}
-              size="sm"
-              className="bg-white/10 hover:bg-white/20 text-white border border-white/20"
-            >
-              {isRefreshing ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              )}
-            </Button>
           </div>
         </div>
       </header>
@@ -332,25 +326,6 @@ export default function SessionPage({ params }: SessionPageProps) {
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
               <span className="text-sm text-white/70">Recording</span>
             </div>
-            <Button
-              onClick={loadEventsFromBackend}
-              disabled={isRefreshing}
-              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2"
-            >
-              {isRefreshing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Refreshing...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Refresh Events
-                </>
-              )}
-            </Button>
             <Button
               onClick={endSession}
               className="bg-red-600 hover:bg-red-700 text-white border-0 px-6 py-2 rounded-lg font-semibold transition-all duration-200"

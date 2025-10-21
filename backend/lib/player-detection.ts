@@ -64,7 +64,7 @@ Only include players that are actually mentioned or clearly implied in the event
       const response = await Promise.race([
         this.cohere.chat({
           message: prompt,
-          model: 'command-r-plus',
+          model: 'command-r7b-12-2024',
           temperature: 0.1,
           maxTokens: 300
         }),
