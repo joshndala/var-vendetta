@@ -22,6 +22,7 @@ export default function EventLogger({
   const [notes, setNotes] = useState("")
   const [isRecording, setIsRecording] = useState(false)
   const [isLogging, setIsLogging] = useState(false)
+  const [recognition, setRecognition] = useState<any>(null)
 
   const handleLogEvent = async () => {
     if (!notes.trim()) {
@@ -67,17 +68,17 @@ export default function EventLogger({
       // Start recording
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-        const recognition = new SpeechRecognition()
+        const newRecognition = new SpeechRecognition()
         
-        recognition.continuous = true
-        recognition.interimResults = true
-        recognition.lang = 'en-US'
+        newRecognition.continuous = false
+        newRecognition.interimResults = true
+        newRecognition.lang = 'en-US'
         
-        recognition.onstart = () => {
+        newRecognition.onstart = () => {
           setIsRecording(true)
         }
         
-        recognition.onresult = (event: any) => {
+        newRecognition.onresult = (event: any) => {
           let finalTranscript = ''
           let interimTranscript = ''
           
@@ -90,30 +91,35 @@ export default function EventLogger({
             }
           }
           
-          // Update the notes field with the transcribed text
-          setNotes(prev => {
-            const currentText = prev || ''
-            const newText = currentText + finalTranscript
-            return newText + interimTranscript
-          })
+          // Only add final transcript to avoid repetition
+          if (finalTranscript) {
+            setNotes(prev => (prev || '') + finalTranscript)
+          }
         }
         
-        recognition.onerror = (event: any) => {
+        newRecognition.onerror = (event: any) => {
           console.error('Speech recognition error:', event.error)
           setIsRecording(false)
+          setRecognition(null)
           alert('Speech recognition failed. Please try again.')
         }
         
-        recognition.onend = () => {
+        newRecognition.onend = () => {
           setIsRecording(false)
+          setRecognition(null)
         }
         
-        recognition.start()
+        setRecognition(newRecognition)
+        newRecognition.start()
       } else {
         alert('Speech recognition is not supported in this browser. Please use Chrome or Safari.')
       }
     } else {
-      // Stop recording - this will be handled by the recognition.onend event
+      // Stop recording manually
+      if (recognition) {
+        recognition.stop()
+        setRecognition(null)
+      }
       setIsRecording(false)
     }
   }
