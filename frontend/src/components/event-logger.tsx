@@ -63,9 +63,59 @@ export default function EventLogger({
   }
 
   const toggleRecording = () => {
-    setIsRecording(!isRecording)
-    // TODO: Implement speech recognition
-    // When recording starts, it should populate the notes field with transcribed speech
+    if (!isRecording) {
+      // Start recording
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        const recognition = new SpeechRecognition()
+        
+        recognition.continuous = true
+        recognition.interimResults = true
+        recognition.lang = 'en-US'
+        
+        recognition.onstart = () => {
+          setIsRecording(true)
+        }
+        
+        recognition.onresult = (event: any) => {
+          let finalTranscript = ''
+          let interimTranscript = ''
+          
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript
+            } else {
+              interimTranscript += transcript
+            }
+          }
+          
+          // Update the notes field with the transcribed text
+          setNotes(prev => {
+            const currentText = prev || ''
+            const newText = currentText + finalTranscript
+            return newText + interimTranscript
+          })
+        }
+        
+        recognition.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error)
+          setIsRecording(false)
+          alert('Speech recognition failed. Please try again.')
+        }
+        
+        recognition.onend = () => {
+          setIsRecording(false)
+        }
+        
+        recognition.start()
+      } else {
+        alert('Speech recognition is not supported in this browser. Please use Chrome or Safari.')
+      }
+    } else {
+      // Stop recording - this will be handled by the recognition.onend event
+      setIsRecording(false)
+    }
   }
 
   return (
@@ -128,14 +178,17 @@ export default function EventLogger({
           variant="outline"
           className={`w-full flex items-center justify-center gap-2 transition-all duration-200 ${
             isRecording 
-              ? 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30' 
+              ? 'bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30 animate-pulse' 
               : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
           }`}
         >
           {isRecording ? (
             <>
               <MicOff className="w-4 h-4" />
-              Stop Recording
+              <span className="flex items-center gap-2">
+                Stop Recording
+                <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+              </span>
             </>
           ) : (
             <>
